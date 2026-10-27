@@ -3,7 +3,8 @@
  * Used by both the "Add vendor" panel and the vendor detail page.
  *
  * Field groups mirror how the office thinks about a client:
- *   identity (vendor ID, business, type, offerings) → contact details → internal.
+ *   identity (vendor ID, business, type, offerings) → contact details & address
+ *   → online presence → internal.
  */
 'use client';
 
@@ -124,10 +125,13 @@ export default function VendorForm({
         <div><label>Website</label><input value={v.website ?? ''} onChange={set('website')} placeholder="example.com" /></div>
       </div>
       <div>
+        <label>Address (printed on invoices &amp; receipts)</label>
+        <textarea value={v.address ?? ''} onChange={set('address')} style={{ minHeight: 60 }} placeholder="Leave blank if unknown" />
+      </div>
+      <div>
         <label>Social media (as many as they have)</label>
         <SocialLinksInput value={v.social_links ?? []} onChange={(links) => setV((p) => ({ ...p, social_links: links }))} />
       </div>
-      <div><label>Address</label><textarea value={v.address ?? ''} onChange={set('address')} style={{ minHeight: 60 }} /></div>
       <div><label>Internal notes (never shown to the vendor)</label><textarea value={v.notes ?? ''} onChange={set('notes')} /></div>
       <div className="row">
         <label className="check"><input type="checkbox" checked={v.whatsapp_opt_in} onChange={set('whatsapp_opt_in')} /> WhatsApp opt-in</label>
