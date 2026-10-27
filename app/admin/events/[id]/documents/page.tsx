@@ -261,7 +261,14 @@ function GroupRows(props: {
  */
 function EditDocument({ docId, onDone, onCancel }: { docId: string; onDone: () => void; onCancel: () => void }) {
   const [doc, setDoc] = useState<DocumentRow | null>(null);
-  const [form, setForm] = useState({ number: '', issued_on: '', bill_to_name: '', bill_to_address: '', refresh_lines: false });
+  const [form, setForm] = useState({
+    number: '',
+    issued_on: '',
+    bill_to_name: '',
+    bill_to_address: '',
+    refresh_lines: false,
+    refresh_bill_to: false,
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -270,7 +277,14 @@ function EditDocument({ docId, onDone, onCancel }: { docId: string; onDone: () =
     api<{ document: DocumentRow }>(`/api/admin/documents/${docId}`)
       .then(({ document: d }) => {
         setDoc(d);
-        setForm({ number: d.number, issued_on: d.issued_on, bill_to_name: d.bill_to_name, bill_to_address: d.bill_to_address ?? '', refresh_lines: false });
+        setForm({
+          number: d.number,
+          issued_on: d.issued_on,
+          bill_to_name: d.bill_to_name,
+          bill_to_address: d.bill_to_address ?? '',
+          refresh_lines: false,
+          refresh_bill_to: false,
+        });
       })
       .catch((e: Error) => setError(e.message));
   }, [docId]);
@@ -305,9 +319,18 @@ function EditDocument({ docId, onDone, onCancel }: { docId: string; onDone: () =
         </div>
       </div>
       <div>
-        <label>Address</label>
-        <textarea style={{ minHeight: 70 }} value={form.bill_to_address} onChange={(e) => setForm((f) => ({ ...f, bill_to_address: e.target.value }))} />
+        <label>Address (optional; left off the document when empty)</label>
+        <textarea
+          style={{ minHeight: 70 }}
+          value={form.bill_to_address}
+          disabled={form.refresh_bill_to}
+          onChange={(e) => setForm((f) => ({ ...f, bill_to_address: e.target.value }))}
+        />
       </div>
+      <label className="check">
+        <input type="checkbox" checked={form.refresh_bill_to} onChange={(e) => setForm((f) => ({ ...f, refresh_bill_to: e.target.checked }))} />
+        Use the vendor’s current name &amp; address from their vendor record (overrides the boxes above)
+      </label>
       <label className="check">
         <input type="checkbox" checked={form.refresh_lines} onChange={(e) => setForm((f) => ({ ...f, refresh_lines: e.target.checked }))} />
         Update line wording from current event details (name, venue, dates). Prices stay the same.

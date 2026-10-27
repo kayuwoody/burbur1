@@ -8,6 +8,8 @@
  * directly, or set a specific number to continue existing paper numbering.
  * refresh_lines: true re-copies the line items from the current event
  * details (e.g. after adding the venue name).
+ * refresh_bill_to: true re-copies the vendor's current business name and
+ * address (e.g. after the address was added to the vendor record).
  */
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
@@ -32,6 +34,7 @@ export const PATCH = handle(async (req, { params }: { params: { id: string } }) 
     bill_to_name?: string;
     bill_to_address?: string | null;
     refresh_lines?: boolean;
+    refresh_bill_to?: boolean;
   };
 
   const doc = must(await supabase.from('documents').select('*').eq('id', params.id).maybeSingle()) as DocumentRow | null;
@@ -52,6 +55,14 @@ export const PATCH = handle(async (req, { params }: { params: { id: string } }) 
     update.bill_to_name = body.bill_to_name.trim();
   }
   if (body.bill_to_address !== undefined) update.bill_to_address = body.bill_to_address?.trim() || null;
+
+  if (body.refresh_bill_to) {
+    const vendor = must(
+      await supabase.from('vendors').select('business_name, address').eq('id', doc.vendor_id).single(),
+    ) as { business_name: string; address: string | null };
+    update.bill_to_name = vendor.business_name;
+    update.bill_to_address = vendor.address;
+  }
 
   if (body.refresh_lines) {
     // Re-word each line from the current event details; prices stay as issued.
