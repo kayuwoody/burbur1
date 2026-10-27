@@ -24,7 +24,7 @@ export const GET = handle(async (req) => {
   if (q) {
     // Strip characters that have meaning in PostgREST's or() syntax.
     const s = q.replace(/[,()%*]/g, ' ');
-    const cols = ['vendor_code', 'business_name', 'contact_name', 'phone', 'office_phone', 'email', 'offerings', 'address'];
+    const cols = ['vendor_code', 'business_name', 'contact_name', 'phone', 'email', 'offerings', 'address'];
     query = query.or(cols.map((c) => `${c}.ilike.%${s}%`).join(','));
   }
   // ?type=3 → that type only; ?type=none → vendors with no type set.

@@ -19,7 +19,6 @@ export type VendorInput = Pick<
   | 'offerings'
   | 'contact_name'
   | 'phone'
-  | 'office_phone'
   | 'email'
   | 'address'
   | 'website'
@@ -35,7 +34,6 @@ const EMPTY: VendorInput = {
   offerings: '',
   contact_name: '',
   phone: '',
-  office_phone: '',
   email: '',
   address: '',
   website: '',
@@ -118,8 +116,7 @@ export default function VendorForm({
       </div>
       <div className="grid">
         <div><label>Contact person</label><input value={v.contact_name ?? ''} onChange={set('contact_name')} /></div>
-        <div><label>Contact no. (WhatsApp)</label><input type="tel" value={v.phone ?? ''} onChange={set('phone')} /></div>
-        <div><label>Phone (office / other)</label><input type="tel" value={v.office_phone ?? ''} onChange={set('office_phone')} /></div>
+        <div><label>Phone (WhatsApp)</label><input type="tel" value={v.phone ?? ''} onChange={set('phone')} /></div>
         <div><label>Email (links their login)</label><input type="email" value={v.email ?? ''} onChange={set('email')} /></div>
         <div><label>Website / social</label><input value={v.website ?? ''} onChange={set('website')} placeholder="example.com or instagram.com/…" /></div>
       </div>

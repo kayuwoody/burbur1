@@ -29,7 +29,7 @@ NEXT_PUBLIC_SITE_URL
 - `events`: id = `YYMMDD` of `start_date`; `end_date` (≥ start, may cross months); status `draft|open|closed`. Bookable until `end_date` passes (MYT). Columns renamed in `004_event_date_range.sql`; later migrations are append-only.
 - `event_stalls`: (event_id, stall_no) → vendor_id, price, power_watts, status `available|held|booked|blocked`, booking_id, hold_expires_at
 - `bookings` (status `pending_payment|payment_submitted|confirmed|cancelled|expired`, `ref` short code) + `booking_items` (price snapshot)
-- `vendors`: `vendor_code` (auto `V0001` via `next_vendor_code()`, admin-editable, unique), `vendor_type_id` → `vendor_types`, `offerings`, `phone` (= contact no./WhatsApp), `office_phone`, `email`, `address`, `website`, `notes` (admin-only). Legacy `category` column is unused (copied into `offerings` by `005_vendor_details.sql`). Field rules live in `lib/server/vendors.ts` (`cleanVendorInput` with `admin` flag).
+- `vendors`: `vendor_code` (auto `V0001` via `next_vendor_code()`, admin-editable, unique), `vendor_type_id` → `vendor_types`, `offerings`, `contact_name` (contact person), `phone` (WhatsApp), `email`, `address`, `website`, `notes` (admin-only). Legacy `category` and `office_phone` columns are unused (copied into `offerings` by `005_vendor_details.sql`). Field rules live in `lib/server/vendors.ts` (`cleanVendorInput` with `admin` flag).
 - `vendor_types`: admin-managed list (Settings page); delete refused while in use
 - `settings` (single row id=1): bank details, hold_hours
 - `notification_log`: WhatsApp sends per event/vendor

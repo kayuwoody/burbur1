@@ -82,7 +82,7 @@ export default function AdminVendorsPage() {
         <table>
           <thead>
             <tr>
-              <th>ID</th><th>Business</th><th>Type</th><th>Offerings</th><th>Contact</th><th>Contact no.</th><th>Email</th><th>Login</th><th>WA</th>
+              <th>ID</th><th>Business</th><th>Type</th><th>Offerings</th><th>Contact</th><th>Phone</th><th>Email</th><th>Login</th><th>WA</th>
             </tr>
           </thead>
           <tbody>

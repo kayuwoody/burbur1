@@ -19,7 +19,6 @@ export default function ProfilePage() {
     business_name: '',
     contact_name: '',
     phone: '',
-    office_phone: '',
     vendor_type_id: '' as string, // select value; '' = not chosen
     offerings: '',
     address: '',
@@ -38,7 +37,6 @@ export default function ProfilePage() {
         business_name: v.business_name ?? '',
         contact_name: v.contact_name ?? '',
         phone: v.phone ?? '',
-        office_phone: v.office_phone ?? '',
         vendor_type_id: v.vendor_type_id ? String(v.vendor_type_id) : '',
         offerings: v.offerings ?? '',
         address: v.address ?? '',
@@ -106,12 +104,8 @@ export default function ProfilePage() {
           <input value={form.contact_name} onChange={set('contact_name')} />
         </div>
         <div>
-          <label>Contact no. (WhatsApp) *</label>
+          <label>Phone (WhatsApp) *</label>
           <input required type="tel" placeholder="012-345 6789" value={form.phone} onChange={set('phone')} />
-        </div>
-        <div>
-          <label>Other phone (optional)</label>
-          <input type="tel" value={form.office_phone} onChange={set('office_phone')} />
         </div>
         <div>
           <label>Address</label>

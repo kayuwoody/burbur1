@@ -37,7 +37,7 @@ export const PUT = handle(async (req) => {
   // active flag are admin-only). Email always comes from the login.
   const fields = { ...cleanVendorInput(input, { admin: false }), email: ctx.email };
   if (!fields.business_name) throw new HttpError(400, 'Business name is required');
-  if (!fields.phone) throw new HttpError(400, 'Contact number is required');
+  if (!fields.phone) throw new HttpError(400, 'Phone number is required');
 
   // Already has a profile → plain update.
   if (ctx.vendor) {

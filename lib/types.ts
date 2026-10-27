@@ -35,11 +35,10 @@ export interface Vendor {
   vendor_code: string;
   auth_user_id: string | null;
   business_name: string;
+  /** Contact person's name. */
   contact_name: string | null;
-  /** Contact no. — mobile / WhatsApp, used for notifications. */
+  /** Phone — mobile / WhatsApp, used for notifications. */
   phone: string | null;
-  /** Second phone line (office / landline). */
-  office_phone: string | null;
   email: string | null;
   vendor_type_id: number | null;
   /** Embedded on admin reads: the type's name. */

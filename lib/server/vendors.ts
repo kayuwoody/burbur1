@@ -16,7 +16,7 @@ import type { Vendor } from '../types';
 export const VENDOR_SELECT = '*, vendor_type:vendor_types(name)';
 
 /** Fields a vendor may edit on their own profile. */
-const SELF_TEXT = ['business_name', 'contact_name', 'phone', 'office_phone', 'offerings', 'address', 'website'] as const;
+const SELF_TEXT = ['business_name', 'contact_name', 'phone', 'offerings', 'address', 'website'] as const;
 /** Extra fields only admins may edit. */
 const ADMIN_TEXT = ['email', 'notes', 'vendor_code'] as const;
 
