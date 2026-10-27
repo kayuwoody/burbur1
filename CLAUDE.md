@@ -9,14 +9,14 @@ Event stall booking system. Next.js 14 App Router on Vercel, its **own** Supabas
 ## Env vars
 ```
 SUPABASE_URL
-SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_SERVICE_ROLE_KEY      (the sb_secret_… key; legacy service_role also works)
 NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SUPABASE_ANON_KEY  (the sb_publishable_… key)
 NEXT_PUBLIC_SITE_URL
 ```
 
 ## Architecture
-- Browser uses Supabase **only for auth** (`lib/supabaseBrowser.ts`). All data goes through `/api/*` routes using the service-role client (`lib/server/supabase.ts`). RLS is disabled.
+- Browser uses Supabase **only for auth** (`lib/supabaseBrowser.ts`). All data goes through `/api/*` routes using the secret-key client (`lib/server/supabase.ts`). RLS is **enabled with no policies** and function EXECUTE is revoked from anon/authenticated (`003_lockdown.sql`), so the publishable key can't touch data. Any new table/function must be added to that lockdown.
 - `lib/api.ts` attaches `Authorization: Bearer <access_token>`; routes call `requireUser` / `requireVendor` / `requireAdmin` from `lib/server/auth.ts` and are wrapped in `handle()` (throw `HttpError` for 4xx).
 - Admins = rows in `admins` table. Vendors = `vendors.auth_user_id`.
 - Client pages guard with `useRequireAuth('user'|'vendor'|'admin')` (navigation only; the server is the real check).

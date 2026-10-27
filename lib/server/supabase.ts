@@ -2,7 +2,9 @@
  * lib/server/supabase.ts — service-role Supabase client (SERVER ONLY).
  *
  * CONCEPT: every database read/write goes through API routes that use the
- * service-role key, which bypasses RLS. The browser never talks to the
+ * SECRET key (sb_secret_…, or the legacy service_role key), which bypasses RLS.
+ * RLS is ON with no policies (003_lockdown.sql), so the publishable key in the
+ * browser can't read or write any table. The browser never talks to the
  * database directly; it only uses Supabase for login (see lib/supabaseBrowser).
  * The API routes are therefore responsible for checking WHO is asking
  * (see lib/server/auth.ts) before touching data.

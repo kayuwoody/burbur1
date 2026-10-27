@@ -13,6 +13,7 @@ Online stall booking for events. Vendors log in, pick an event date, click stall
 2. In **SQL Editor**, run these files in order:
    - `supabase/migrations/001_init.sql`: tables, storage bucket, booking functions
    - `supabase/migrations/002_seed_layout.sql`: the master floor plan (34 stalls)
+   - `supabase/migrations/003_lockdown.sql`: turns on RLS and blocks the public key from tables/functions (**required**)
 3. **Authentication → Providers → Email**: keep it enabled. Leave **Confirm email** ON, because it prevents someone from claiming a vendor record with an email they don't own.
 4. **Authentication → URL Configuration**: set **Site URL** to your Vercel URL and add `https://<your-app>.vercel.app/**` to Redirect URLs.
 
@@ -22,9 +23,9 @@ Online stall booking for events. Vendors log in, pick an event date, click stall
 
    | Variable | Where to find it |
    |---|---|
-   | `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Same page, `service_role` key (**secret**, server only) |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page, `anon` `public` key |
+   | `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → Data API → Project URL |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API Keys → **Secret key** (`sb_secret_…`). Server only, never `NEXT_PUBLIC_`. (Legacy `service_role` also works.) |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page, **Publishable key** (`sb_publishable_…`). Used only for login. |
    | `NEXT_PUBLIC_SITE_URL` | Your Vercel URL, used in WhatsApp links |
 
 ### 3. Make yourself an admin

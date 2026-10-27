@@ -20,8 +20,9 @@
 --       └──(hold expires / rejected)────┘
 --   blocked = greyed out by admin for this event (not offered for sale)
 --
--- All access goes through server routes using the service-role key, the same
--- pattern as bubu1. RLS is therefore left disabled on these tables.
+-- All access goes through server routes using the SECRET (service-role) key,
+-- which bypasses RLS. 003_lockdown.sql enables RLS with no policies so the
+-- public/publishable key can't touch these tables directly.
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
