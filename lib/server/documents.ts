@@ -35,12 +35,34 @@ async function ensurePrefix(event: EventInfo): Promise<void> {
 }
 
 /**
+ * Does the event name already say when it is? e.g. "GVO NOV 13-26".
+ * CONCEPT: true when the name contains the start DAY as a separate number
+ * AND the start MONTH (as 'nov'/'november' or its number). Requiring both
+ * avoids false hits like "Bazaar 13" or "Fair 2026".
+ */
+export function nameHasDates(name: string, startDate: string): boolean {
+  const [, m, d] = startDate.split('-').map(Number);
+  const lower = name.toLowerCase();
+  // A number standing on its own (not part of a longer number), with optional leading zero.
+  const num = (n: number) => new RegExp(`(^|\\D)0?${n}(\\D|$)`);
+  const hasDay = num(d).test(lower);
+  // Month as text ('nov', 'november') or as a number, e.g. '13/11'. The day
+  // is removed first so that, say, the 11 in 'Nov 11' isn't also read as November.
+  const monthName = new Date(Date.UTC(2000, m - 1, 1)).toLocaleString('en-GB', { month: 'short', timeZone: 'UTC' }).toLowerCase().slice(0, 3);
+  const hasMonth = lower.includes(monthName) || num(m).test(lower.replace(num(d), '$1$2'));
+  return hasDay && hasMonth;
+}
+
+/**
  * Line item wording, following the existing invoices:
  * "Booth rental (Booth 12) for Good Vibes Only Bazaar at EkoCheras Mall 26-27 Sept 2026"
+ * The dates are left off when the event name already contains them
+ * ("Booth rental (Booth 21) for GVO NOV 13-26"), so they aren't printed twice.
  */
 export function lineDescription(event: EventInfo, stallNo: string): string {
   const venue = event.venue ? ` at ${event.venue}` : '';
-  return `Booth rental (Booth ${stallNo}) for ${event.name}${venue} ${docDateRange(event.start_date, event.end_date)}`;
+  const dates = nameHasDates(event.name, event.start_date) ? '' : ` ${docDateRange(event.start_date, event.end_date)}`;
+  return `Booth rental (Booth ${stallNo}) for ${event.name}${venue}${dates}`;
 }
 
 /** Gather everything an invoice for this group needs: event, vendor, stalls → lines. */
