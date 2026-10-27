@@ -22,6 +22,9 @@ begin
 end $$;
 
 alter table events add column if not exists end_date date;
+-- If end_date was added by hand with another type (timestamp, text…),
+-- normalise it to a plain date. No-op when it's already a date.
+alter table events alter column end_date type date using end_date::date;
 update events set end_date = start_date where end_date is null;
 alter table events alter column end_date set not null;
 
