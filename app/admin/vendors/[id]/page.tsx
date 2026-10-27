@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { BOOKING_STATUS_LABEL, formatDateRange, formatDateTime, rm, waLink } from '@/lib/util';
 import VendorForm, { type VendorInput } from '@/components/VendorForm';
 import BookingItems from '@/components/BookingItems';
+import { SocialLinksDisplay } from '@/components/SocialLinks';
 import type { Booking, Vendor } from '@/lib/types';
 
 type Assigned = { event_id: string; stall_no: string; price: number; events: { name: string; start_date: string; end_date: string } | null };
@@ -53,7 +54,6 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
         </div>
         <div className="row">
           {wa && <a className="btn btn-wa btn-sm" href={wa} target="_blank" rel="noreferrer">WhatsApp</a>}
-          {vendor.website && <a className="btn btn-sm" href={vendor.website} target="_blank" rel="noreferrer">Website</a>}
           <Link href="/admin/vendors" className="btn btn-sm">← Vendors</Link>
         </div>
       </div>
@@ -61,7 +61,9 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
         Added {formatDateTime(vendor.created_at)} · {vendor.auth_user_id ? 'Has a login' : 'No login yet'} · Confirmed spend {rm(lifetime)}
       </p>
 
-      <div className="card">
+      <SocialLinksDisplay website={vendor.website} links={vendor.social_links} />
+
+      <div className="card" style={{ marginTop: 12 }}>
         {/* key forces the form to re-initialise if the vendor record reloads */}
         <VendorForm key={vendor.id} initial={vendor} submitLabel="Save changes" onSubmit={save} />
       </div>

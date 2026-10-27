@@ -10,6 +10,7 @@
  */
 import { supabase } from './supabase';
 import { HttpError } from './auth';
+import { normalizeUrl } from '../util';
 import type { Vendor } from '../types';
 
 /** Columns to select for admin views: every vendor column + the type name. */
@@ -34,8 +35,18 @@ export function cleanVendorInput(input: Partial<Vendor>, opts: { admin: boolean 
     if (input[k] !== undefined) out[k] = (input[k] as string | null)?.trim() || null;
   }
 
-  if (typeof out.website === 'string' && !/^https?:\/\//i.test(out.website)) {
-    out.website = `https://${out.website}`;
+  if (typeof out.website === 'string') out.website = normalizeUrl(out.website);
+
+  // Social links: a list. Trim, drop blanks, add https://, remove duplicates,
+  // and cap the count/length so a bad request can't store junk.
+  if (input.social_links !== undefined) {
+    if (!Array.isArray(input.social_links)) throw new HttpError(400, 'Invalid social links');
+    const links = input.social_links
+      .map((l) => String(l ?? '').trim())
+      .filter(Boolean)
+      .map(normalizeUrl);
+    if (links.some((l) => l.length > 300)) throw new HttpError(400, 'A social link is too long');
+    out.social_links = [...new Set(links)].slice(0, 10);
   }
   if ('vendor_code' in out) {
     // The code can be changed but not cleared (it's NOT NULL in the DB).

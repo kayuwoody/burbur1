@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
 import { useVendorTypes } from '@/components/useVendorTypes';
+import { SocialLinksInput } from '@/components/SocialLinks';
 
 export default function ProfilePage() {
   const { ready, me, refresh } = useRequireAuth('user');
@@ -23,6 +24,7 @@ export default function ProfilePage() {
     offerings: '',
     address: '',
     website: '',
+    social_links: [] as string[],
     whatsapp_opt_in: true,
   });
   const [busy, setBusy] = useState(false);
@@ -41,6 +43,7 @@ export default function ProfilePage() {
         offerings: v.offerings ?? '',
         address: v.address ?? '',
         website: v.website ?? '',
+        social_links: v.social_links ?? [],
         whatsapp_opt_in: v.whatsapp_opt_in,
       });
     }
@@ -112,8 +115,12 @@ export default function ProfilePage() {
           <textarea style={{ minHeight: 60 }} value={form.address} onChange={set('address')} />
         </div>
         <div>
-          <label>Website / social media</label>
-          <input placeholder="example.com or instagram.com/yourshop" value={form.website} onChange={set('website')} />
+          <label>Website</label>
+          <input placeholder="example.com" value={form.website} onChange={set('website')} />
+        </div>
+        <div>
+          <label>Social media: add as many as you have</label>
+          <SocialLinksInput value={form.social_links} onChange={(links) => setForm((f) => ({ ...f, social_links: links }))} />
         </div>
         <label className="check">
           <input type="checkbox" checked={form.whatsapp_opt_in} onChange={set('whatsapp_opt_in')} />

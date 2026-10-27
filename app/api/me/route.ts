@@ -60,7 +60,7 @@ export const PUT = handle(async (req) => {
     if (existing) {
       // Only apply fields the vendor actually filled in, so blanks on their
       // first-time form don't wipe details the admin already recorded.
-      const filled = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== null && v !== undefined));
+      const filled = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0)));
       return NextResponse.json({ vendor: await saveVendor({ ...filled, auth_user_id: ctx.userId }, existing.id) });
     }
   }

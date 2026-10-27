@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import { useVendorTypes } from './useVendorTypes';
+import { SocialLinksInput } from './SocialLinks';
 import type { Vendor } from '@/lib/types';
 
 export type VendorInput = Pick<
@@ -22,6 +23,7 @@ export type VendorInput = Pick<
   | 'email'
   | 'address'
   | 'website'
+  | 'social_links'
   | 'notes'
   | 'whatsapp_opt_in'
   | 'is_active'
@@ -37,6 +39,7 @@ const EMPTY: VendorInput = {
   email: '',
   address: '',
   website: '',
+  social_links: [],
   notes: '',
   whatsapp_opt_in: true,
   is_active: true,
@@ -118,7 +121,11 @@ export default function VendorForm({
         <div><label>Contact person</label><input value={v.contact_name ?? ''} onChange={set('contact_name')} /></div>
         <div><label>Phone (WhatsApp)</label><input type="tel" value={v.phone ?? ''} onChange={set('phone')} /></div>
         <div><label>Email (links their login)</label><input type="email" value={v.email ?? ''} onChange={set('email')} /></div>
-        <div><label>Website / social</label><input value={v.website ?? ''} onChange={set('website')} placeholder="example.com or instagram.com/…" /></div>
+        <div><label>Website</label><input value={v.website ?? ''} onChange={set('website')} placeholder="example.com" /></div>
+      </div>
+      <div>
+        <label>Social media (as many as they have)</label>
+        <SocialLinksInput value={v.social_links ?? []} onChange={(links) => setV((p) => ({ ...p, social_links: links }))} />
       </div>
       <div><label>Address</label><textarea value={v.address ?? ''} onChange={set('address')} style={{ minHeight: 60 }} /></div>
       <div><label>Internal notes (never shown to the vendor)</label><textarea value={v.notes ?? ''} onChange={set('notes')} /></div>

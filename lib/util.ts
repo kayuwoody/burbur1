@@ -131,3 +131,45 @@ export const BOOKING_STATUS_LABEL: Record<string, string> = {
   cancelled: 'Cancelled',
   expired: 'Expired',
 };
+
+/**
+ * Add 'https://' to a URL typed without a scheme ('instagram.com/shop').
+ * CONCEPT: also neutralises odd schemes like 'javascript:' by treating
+ * them as a host name, so stored links are always safe to put in an <a>.
+ */
+export function normalizeUrl(raw: string): string {
+  const s = raw.trim();
+  return /^https?:\/\//i.test(s) ? s : `https://${s}`;
+}
+
+/** Known social platforms, matched against a URL's domain. */
+const PLATFORMS: { name: string; domains: string[] }[] = [
+  { name: 'Facebook', domains: ['facebook.com', 'fb.com', 'fb.me'] },
+  { name: 'Instagram', domains: ['instagram.com'] },
+  { name: 'TikTok', domains: ['tiktok.com'] },
+  { name: 'YouTube', domains: ['youtube.com', 'youtu.be'] },
+  { name: 'X', domains: ['x.com', 'twitter.com'] },
+  { name: 'Threads', domains: ['threads.net'] },
+  { name: 'LinkedIn', domains: ['linkedin.com'] },
+  { name: 'Shopee', domains: ['shopee.com.my', 'shopee.com', 'shp.ee'] },
+  { name: 'Lazada', domains: ['lazada.com.my', 'lazada.com'] },
+  { name: 'WhatsApp', domains: ['wa.me', 'whatsapp.com'] },
+];
+
+/**
+ * Work out which platform a social URL belongs to, for labelling.
+ * 'https://www.instagram.com/kopi.co' → { name: 'Instagram', handle: 'kopi.co' }
+ * Unknown domains → { name: <domain> } so the link is still recognisable.
+ */
+export function socialPlatform(url: string): { name: string; handle: string | null } {
+  try {
+    const u = new URL(normalizeUrl(url));
+    const host = u.hostname.replace(/^(www\.|m\.)/, '').toLowerCase();
+    const p = PLATFORMS.find((pl) => pl.domains.some((d) => host === d || host.endsWith(`.${d}`)));
+    // First path segment is usually the handle/page name (strip TikTok's '@').
+    const first = u.pathname.split('/').filter(Boolean)[0]?.replace(/^@/, '') ?? null;
+    return { name: p?.name ?? host, handle: first };
+  } catch {
+    return { name: 'Link', handle: null };
+  }
+}

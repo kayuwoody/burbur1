@@ -46,7 +46,10 @@ export interface Vendor {
   /** Free text: what they actually sell / offer. */
   offerings: string | null;
   address: string | null;
+  /** The vendor's own website (single). */
   website: string | null;
+  /** Any number of social media URLs; platform is detected from the domain. */
+  social_links: string[];
   notes: string | null;
   whatsapp_opt_in: boolean;
   is_active: boolean;
