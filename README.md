@@ -15,6 +15,7 @@ Online stall booking for events. Vendors log in, pick an event date, click stall
    - `supabase/migrations/002_seed_layout.sql`: the master floor plan (34 stalls)
    - `supabase/migrations/003_lockdown.sql`: turns on RLS and blocks the public key from tables/functions (**required**)
    - `supabase/migrations/004_event_date_range.sql`: events get a start and end date
+   - `supabase/migrations/005_vendor_details.sql`: vendor ID codes, vendor types, offerings, address, website
 3. **Authentication → Providers → Email**: keep it enabled. Leave **Confirm email** ON, because it prevents someone from claiming a vendor record with an email they don't own.
 4. **Authentication → URL Configuration**: set **Site URL** to your Vercel URL and add `https://<your-app>.vercel.app/**` to Redirect URLs.
 
@@ -64,7 +65,7 @@ Unpaid holds are released automatically after the hold time. Once a receipt is u
 - **Events**: create with a start and end date (can span months). ID = `YYMMDD` of the start date; the end date can be changed later. Vendors can book until the end date passes. All layout stalls are copied in with a default price and power. New events start as **Draft** (hidden from vendors).
 - **Event map**: click stalls to select (multi-select), then set price/power, **grey out (block)**, or **assign to a vendor directly** for offline arrangements. Switch the event to **Open** when ready. The panel shows booked revenue and power totals.
 - **Bookings**: view the receipt, **Confirm payment** or **Cancel**, plus a WhatsApp button with a pre-written message.
-- **Vendors**: search, add, edit, internal notes, booking history. Vendors you add without a login are linked automatically when they sign up with the same email.
+- **Vendors**: vendor ID (auto `V0001`, editable), type (Products / Services / Activities, managed in Settings), offerings, contact no., phone, email, address, website, internal notes, booking history. Filter by type and search everything. Vendors you add without a login are linked automatically when they sign up with the same email.
 - **Notify**: pick an event, write a message with `{name} {event} {date} {link}` placeholders, and tap **Send** per vendor. This opens WhatsApp with the message ready, using your existing WhatsApp Business app (free). Sends are logged so you can see who hasn't been told yet.
 
 ### Stall status

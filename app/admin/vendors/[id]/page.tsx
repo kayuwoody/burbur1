@@ -44,9 +44,16 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
   return (
     <>
       <div className="spread">
-        <h1>{vendor.business_name}</h1>
+        <div>
+          <div className="small muted">
+            {vendor.vendor_code}
+            {vendor.vendor_type && <> · {vendor.vendor_type.name}</>}
+          </div>
+          <h1 style={{ marginTop: 4 }}>{vendor.business_name}</h1>
+        </div>
         <div className="row">
           {wa && <a className="btn btn-wa btn-sm" href={wa} target="_blank" rel="noreferrer">WhatsApp</a>}
+          {vendor.website && <a className="btn btn-sm" href={vendor.website} target="_blank" rel="noreferrer">Website</a>}
           <Link href="/admin/vendors" className="btn btn-sm">← Vendors</Link>
         </div>
       </div>

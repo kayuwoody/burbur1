@@ -25,7 +25,7 @@ export const GET = handle(async (req) => {
   const vendors = must(
     await supabase
       .from('vendors')
-      .select('id, business_name, contact_name, phone, category')
+      .select('id, vendor_code, business_name, contact_name, phone, vendor_type_id, offerings, vendor_type:vendor_types(name)')
       .eq('is_active', true)
       .eq('whatsapp_opt_in', true)
       .not('phone', 'is', null)

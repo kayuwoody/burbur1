@@ -1,11 +1,13 @@
 /**
- * /admin/settings — bank details vendors pay into, and the hold duration.
+ * /admin/settings — bank details vendors pay into, the hold duration,
+ * and the list of vendor types.
  */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
+import VendorTypesManager from '@/components/VendorTypesManager';
 import type { Settings } from '@/lib/types';
 
 export default function AdminSettingsPage() {
@@ -59,6 +61,7 @@ export default function AdminSettingsPage() {
         {msg && <p className={`small ${msg.error ? 'error' : 'success'}`}>{msg.text}</p>}
         <div><button className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save settings'}</button></div>
       </form>
+      <VendorTypesManager />
     </div>
   );
 }

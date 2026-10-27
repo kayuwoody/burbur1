@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireUser } from '@/lib/server/auth';
+import { cleanVendorInput, saveVendor } from '@/lib/server/vendors';
 import type { MeResponse, Vendor } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -32,25 +33,15 @@ export const PUT = handle(async (req) => {
   const ctx = await requireUser(req);
   const input = (await req.json()) as Partial<Vendor>;
 
-  const business_name = input.business_name?.trim();
-  const phone = input.phone?.trim();
-  if (!business_name) throw new HttpError(400, 'Business name is required');
-  if (!phone) throw new HttpError(400, 'WhatsApp number is required');
-
-  // Only these fields are vendor-editable; notes/is_active are admin-only.
-  const fields = {
-    business_name,
-    phone,
-    contact_name: input.contact_name?.trim() || null,
-    category: input.category?.trim() || null,
-    whatsapp_opt_in: input.whatsapp_opt_in ?? true,
-    email: ctx.email,
-  };
+  // Only vendor-editable fields pass through (vendor ID code, notes and
+  // active flag are admin-only). Email always comes from the login.
+  const fields = { ...cleanVendorInput(input, { admin: false }), email: ctx.email };
+  if (!fields.business_name) throw new HttpError(400, 'Business name is required');
+  if (!fields.phone) throw new HttpError(400, 'Contact number is required');
 
   // Already has a profile → plain update.
   if (ctx.vendor) {
-    const vendor = must(await supabase.from('vendors').update(fields).eq('id', ctx.vendor.id).select().single());
-    return NextResponse.json({ vendor });
+    return NextResponse.json({ vendor: await saveVendor(fields, ctx.vendor.id) });
   }
 
   // Admin-created row waiting for this email → claim it.
@@ -59,31 +50,21 @@ export const PUT = handle(async (req) => {
       await supabase
         .from('vendors')
         .select('id')
-        .ilike('email', ctx.email)
+        // ilike = case-insensitive equality here; escape its wildcards (_ %)
+        // so 'a_b@x.com' can't match 'axb@x.com'.
+        .ilike('email', ctx.email.replace(/[\\%_]/g, '\\$&'))
         .is('auth_user_id', null)
         .limit(1)
         .maybeSingle(),
     ) as { id: string } | null;
     if (existing) {
-      const vendor = must(
-        await supabase
-          .from('vendors')
-          .update({ ...fields, auth_user_id: ctx.userId })
-          .eq('id', existing.id)
-          .select()
-          .single(),
-      );
-      return NextResponse.json({ vendor });
+      // Only apply fields the vendor actually filled in, so blanks on their
+      // first-time form don't wipe details the admin already recorded.
+      const filled = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== null && v !== undefined));
+      return NextResponse.json({ vendor: await saveVendor({ ...filled, auth_user_id: ctx.userId }, existing.id) });
     }
   }
 
-  // Brand new vendor.
-  const vendor = must(
-    await supabase
-      .from('vendors')
-      .insert({ ...fields, auth_user_id: ctx.userId })
-      .select()
-      .single(),
-  );
-  return NextResponse.json({ vendor });
+  // Brand new vendor (gets the next vendor ID code automatically).
+  return NextResponse.json({ vendor: await saveVendor({ ...fields, auth_user_id: ctx.userId }) });
 });

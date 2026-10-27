@@ -20,14 +20,34 @@ export type BookingStatus =
 /** Event visibility: draft = admin only, open = bookable, closed = read only. */
 export type EventStatus = 'draft' | 'open' | 'closed';
 
+/** Admin-managed vendor classification (Products / Services / Activities …). */
+export interface VendorType {
+  id: number;
+  name: string;
+  sort_order: number;
+  /** Only on the admin list: how many vendors use this type. */
+  vendor_count?: number;
+}
+
 export interface Vendor {
   id: string;
+  /** Human-readable ID, e.g. 'V0001'. Auto-assigned; admins may edit. */
+  vendor_code: string;
   auth_user_id: string | null;
   business_name: string;
   contact_name: string | null;
+  /** Contact no. — mobile / WhatsApp, used for notifications. */
   phone: string | null;
+  /** Second phone line (office / landline). */
+  office_phone: string | null;
   email: string | null;
-  category: string | null;
+  vendor_type_id: number | null;
+  /** Embedded on admin reads: the type's name. */
+  vendor_type?: { name: string } | null;
+  /** Free text: what they actually sell / offer. */
+  offerings: string | null;
+  address: string | null;
+  website: string | null;
   notes: string | null;
   whatsapp_opt_in: boolean;
   is_active: boolean;

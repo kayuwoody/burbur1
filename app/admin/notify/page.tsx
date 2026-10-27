@@ -11,11 +11,22 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
+import { useVendorTypes } from '@/components/useVendorTypes';
 import { api } from '@/lib/api';
 import { fillTemplate, formatDateRange, formatDateTime, waLink } from '@/lib/util';
 import type { EventSummary } from '@/lib/types';
 
-type Row = { id: string; business_name: string; contact_name: string | null; phone: string | null; category: string | null; last_sent: string | null };
+type Row = {
+  id: string;
+  vendor_code: string;
+  business_name: string;
+  contact_name: string | null;
+  phone: string | null;
+  vendor_type_id: number | null;
+  vendor_type: { name: string } | null;
+  offerings: string | null;
+  last_sent: string | null;
+};
 
 const DEFAULT_TEMPLATE =
   'Hi {name}! Stall bookings for *{event}* ({date}) are now open. Pick your spot here: {link}\n\nFirst come, first served!';
@@ -27,6 +38,9 @@ export default function AdminNotifyPage() {
   const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [filter, setFilter] = useState<'unsent' | 'all'>('unsent');
+  // Vendor type filter: '' = everyone, else a type id (e.g. only Activities).
+  const [typeFilter, setTypeFilter] = useState('');
+  const types = useVendorTypes();
 
   // Load events once; preselect ?event= if we came from an event page.
   useEffect(() => {
@@ -76,8 +90,10 @@ export default function AdminNotifyPage() {
   }
 
   if (!ready) return <p className="muted">Loading…</p>;
-  const shown = rows?.filter((r) => filter === 'all' || !r.last_sent) ?? [];
-  const sentCount = rows?.filter((r) => r.last_sent).length ?? 0;
+  // Type filter first (defines the audience), then sent/unsent.
+  const audience = rows?.filter((r) => !typeFilter || String(r.vendor_type_id) === typeFilter) ?? [];
+  const shown = audience.filter((r) => filter === 'all' || !r.last_sent);
+  const sentCount = audience.filter((r) => r.last_sent).length;
 
   return (
     <>
@@ -112,12 +128,21 @@ export default function AdminNotifyPage() {
         )}
       </div>
 
+      <div className="row" style={{ marginBottom: 8 }}>
+        <label style={{ margin: 0 }}>Send to</label>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ width: 'auto' }}>
+          <option value="">All vendor types</option>
+          {types.map((t) => (
+            <option key={t.id} value={t.id}>{t.name} only</option>
+          ))}
+        </select>
+      </div>
       <div className="tabs">
         <button className={`tab${filter === 'unsent' ? ' active' : ''}`} onClick={() => setFilter('unsent')}>
-          Not yet sent ({(rows?.length ?? 0) - sentCount})
+          Not yet sent ({audience.length - sentCount})
         </button>
         <button className={`tab${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>
-          All ({rows?.length ?? 0})
+          All ({audience.length})
         </button>
       </div>
 
@@ -130,7 +155,8 @@ export default function AdminNotifyPage() {
                 <tr key={r.id}>
                   <td>
                     <strong>{r.business_name}</strong>
-                    <div className="small muted">{[r.contact_name, r.category].filter(Boolean).join(' · ')}</div>
+                    <div className="small muted">{[r.vendor_code, r.vendor_type?.name, r.contact_name].filter(Boolean).join(' · ')}</div>
+                    {r.offerings && <div className="small muted" style={{ maxWidth: 360 }}>{r.offerings}</div>}
                   </td>
                   <td className="small">{r.phone}</td>
                   <td className="small muted">{r.last_sent ? `Sent ${formatDateTime(r.last_sent)}` : ''}</td>

@@ -1,23 +1,44 @@
 /**
  * components/VendorForm.tsx — admin form for creating/editing a vendor.
  * Used by both the "Add vendor" panel and the vendor detail page.
+ *
+ * Field groups mirror how the office thinks about a client:
+ *   identity (vendor ID, business, type, offerings) → contact details → internal.
  */
 'use client';
 
 import { useState } from 'react';
+import { useVendorTypes } from './useVendorTypes';
 import type { Vendor } from '@/lib/types';
 
 export type VendorInput = Pick<
   Vendor,
-  'business_name' | 'contact_name' | 'phone' | 'email' | 'category' | 'notes' | 'whatsapp_opt_in' | 'is_active'
+  | 'vendor_code'
+  | 'business_name'
+  | 'vendor_type_id'
+  | 'offerings'
+  | 'contact_name'
+  | 'phone'
+  | 'office_phone'
+  | 'email'
+  | 'address'
+  | 'website'
+  | 'notes'
+  | 'whatsapp_opt_in'
+  | 'is_active'
 >;
 
 const EMPTY: VendorInput = {
+  vendor_code: '',
   business_name: '',
+  vendor_type_id: null,
+  offerings: '',
   contact_name: '',
   phone: '',
+  office_phone: '',
   email: '',
-  category: '',
+  address: '',
+  website: '',
   notes: '',
   whatsapp_opt_in: true,
   is_active: true,
@@ -33,13 +54,26 @@ export default function VendorForm({
   /** Should throw on failure; the error message is shown under the form. */
   onSubmit: (v: VendorInput) => Promise<void>;
 }) {
+  const types = useVendorTypes();
   const [v, setV] = useState<VendorInput>({ ...EMPTY, ...initial });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const isNew = !initial?.vendor_code;
 
-  /** One setter for text inputs, textareas and checkboxes. */
-  const set = (k: keyof VendorInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setV((p) => ({ ...p, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
+  /** One setter for text inputs, textareas, selects and checkboxes. */
+  const set =
+    (k: keyof VendorInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const t = e.target;
+      const value =
+        t instanceof HTMLInputElement && t.type === 'checkbox'
+          ? t.checked
+          : k === 'vendor_type_id'
+            ? t.value
+              ? Number(t.value)
+              : null
+            : t.value;
+      setV((p) => ({ ...p, [k]: value }));
+    };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,13 +92,39 @@ export default function VendorForm({
   return (
     <form onSubmit={submit} className="stack">
       <div className="grid">
+        <div>
+          <label>Vendor ID</label>
+          <input
+            value={v.vendor_code ?? ''}
+            onChange={set('vendor_code')}
+            placeholder={isNew ? 'Auto (e.g. V0012)' : ''}
+            style={{ textTransform: 'uppercase' }}
+          />
+        </div>
         <div><label>Business name *</label><input required value={v.business_name} onChange={set('business_name')} /></div>
-        <div><label>Contact person</label><input value={v.contact_name ?? ''} onChange={set('contact_name')} /></div>
-        <div><label>WhatsApp number</label><input type="tel" value={v.phone ?? ''} onChange={set('phone')} /></div>
-        <div><label>Email (links their login)</label><input type="email" value={v.email ?? ''} onChange={set('email')} /></div>
-        <div><label>Category</label><input value={v.category ?? ''} onChange={set('category')} /></div>
+        <div>
+          <label>Vendor type</label>
+          <select value={v.vendor_type_id ?? ''} onChange={set('vendor_type_id')}>
+            <option value="">Not set</option>
+            {types.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
-      <div><label>Internal notes</label><textarea value={v.notes ?? ''} onChange={set('notes')} /></div>
+      <div>
+        <label>Offerings: what they actually sell / offer</label>
+        <textarea value={v.offerings ?? ''} onChange={set('offerings')} placeholder="e.g. Handmade batik scarves, tote bags" />
+      </div>
+      <div className="grid">
+        <div><label>Contact person</label><input value={v.contact_name ?? ''} onChange={set('contact_name')} /></div>
+        <div><label>Contact no. (WhatsApp)</label><input type="tel" value={v.phone ?? ''} onChange={set('phone')} /></div>
+        <div><label>Phone (office / other)</label><input type="tel" value={v.office_phone ?? ''} onChange={set('office_phone')} /></div>
+        <div><label>Email (links their login)</label><input type="email" value={v.email ?? ''} onChange={set('email')} /></div>
+        <div><label>Website / social</label><input value={v.website ?? ''} onChange={set('website')} placeholder="example.com or instagram.com/…" /></div>
+      </div>
+      <div><label>Address</label><textarea value={v.address ?? ''} onChange={set('address')} style={{ minHeight: 60 }} /></div>
+      <div><label>Internal notes (never shown to the vendor)</label><textarea value={v.notes ?? ''} onChange={set('notes')} /></div>
       <div className="row">
         <label className="check"><input type="checkbox" checked={v.whatsapp_opt_in} onChange={set('whatsapp_opt_in')} /> WhatsApp opt-in</label>
         <label className="check"><input type="checkbox" checked={v.is_active} onChange={set('is_active')} /> Active</label>
