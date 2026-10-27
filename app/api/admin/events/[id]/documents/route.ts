@@ -4,17 +4,19 @@
  * GET  → every vendor with stalls in the event, grouped as billable units
  *        (one per online booking, plus one per vendor for manually assigned
  *        stalls), each with its current invoice/receipt if issued.
- * POST { action: 'invoice' | 'receipt', groups: [{ vendor_id, booking_id }] }
+ * POST { action: 'invoice' | 'receipt', groups: [{ vendor_id, booking_id }], issued_on? }
  *        → issue the missing documents for those groups, then return GET.
  *        'receipt' also creates the invoice first if needed. Receipts for
  *        online bookings are only issued once the payment is confirmed.
+ *        issued_on (YYYY-MM-DD, default today) backdates the new documents,
+ *        e.g. when catching up on a past event.
  */
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
 import { expireStaleHolds } from '@/lib/server/events';
 import { issueInvoice, issueReceipt } from '@/lib/server/documents';
-import { compareStallNo } from '@/lib/util';
+import { compareStallNo, todayMYT } from '@/lib/util';
 import type { DocGroupRow, DocumentRow, DocumentSummary } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -110,10 +112,13 @@ export const GET = handle(async (req, { params }: Ctx) => {
 
 export const POST = handle(async (req, { params }: Ctx) => {
   await requireAdmin(req);
-  const { action, groups } = (await req.json()) as {
+  const { action, groups, issued_on } = (await req.json()) as {
     action?: 'invoice' | 'receipt';
     groups?: { vendor_id: string; booking_id: string | null }[];
+    issued_on?: string;
   };
+  if (issued_on !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(issued_on)) throw new HttpError(400, 'Invalid issue date');
+  const date = issued_on || todayMYT();
   if (action !== 'invoice' && action !== 'receipt') throw new HttpError(400, 'Unknown action');
   if (!Array.isArray(groups) || !groups.length) throw new HttpError(400, 'Nothing selected');
 
@@ -125,10 +130,10 @@ export const POST = handle(async (req, { params }: Ctx) => {
     if (!g) continue;
     try {
       const invoiceId =
-        g.invoice?.id ?? (await issueInvoice({ eventId: params.id, vendorId: g.vendor.id, bookingId: g.booking_id }));
+        g.invoice?.id ?? (await issueInvoice({ eventId: params.id, vendorId: g.vendor.id, bookingId: g.booking_id }, date));
       if (action === 'receipt') {
         if (!g.can_receipt) errors.push(`${g.vendor.business_name}: payment not confirmed yet`);
-        else if (!g.receipt) await issueReceipt(invoiceId);
+        else if (!g.receipt) await issueReceipt(invoiceId, date);
       }
     } catch (e) {
       errors.push(`${g.vendor.business_name}: ${e instanceof Error ? e.message : 'failed'}`);

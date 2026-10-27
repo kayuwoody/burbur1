@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { BOOKING_STATUS_LABEL, documentUrl, formatDateRange, rm, waLink } from '@/lib/util';
+import { BOOKING_STATUS_LABEL, documentUrl, formatDateRange, rm, todayMYT, waLink } from '@/lib/util';
 import type { DocGroupRow, DocumentRow, DocumentSummary, EventRow } from '@/lib/types';
 
 type Payload = { event: EventRow; groups: DocGroupRow[]; voided: DocumentSummary[]; errors?: string[] };
@@ -27,6 +27,8 @@ export default function EventDocumentsPage({ params }: { params: { id: string } 
   const [data, setData] = useState<Payload | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<string | null>(null); // document id being edited
+  // Date printed on newly issued documents; change it to backdate a past event's paperwork.
+  const [issueDate, setIssueDate] = useState(todayMYT());
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
 
@@ -48,7 +50,7 @@ export default function EventDocumentsPage({ params }: { params: { id: string } 
     try {
       const r = await api<Payload>(`/api/admin/events/${params.id}/documents`, {
         method: 'POST',
-        body: { action, groups: rows.map((g) => ({ vendor_id: g.vendor.id, booking_id: g.booking_id })) },
+        body: { action, issued_on: issueDate, groups: rows.map((g) => ({ vendor_id: g.vendor.id, booking_id: g.booking_id })) },
       });
       setData(r);
       setSelected(new Set());
@@ -114,6 +116,9 @@ export default function EventDocumentsPage({ params }: { params: { id: string } 
       {msg && <p className={`card small ${msg.error ? 'error' : 'success'}`} style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>}
 
       <div className="row" style={{ marginBottom: 12 }}>
+        <label className="small" style={{ margin: 0 }}>Issue date</label>
+        <input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value || todayMYT())} style={{ width: 'auto' }} />
+        {issueDate !== todayMYT() && <span className="small muted">(backdated)</span>}
         <span className="small muted">{selected.size ? `${selected.size} selected:` : 'All vendors:'}</span>
         <button className="btn btn-primary btn-sm" disabled={busy || !needInvoice.length} onClick={() => issue('invoice', needInvoice)}>
           Issue {needInvoice.length} missing invoice{needInvoice.length === 1 ? '' : 's'}
