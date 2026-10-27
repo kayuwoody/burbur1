@@ -15,14 +15,11 @@ import type { EventRow } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export const GET = handle(async () => {
-  await expireStaleHolds();
-  const events = must(
-    await supabase
-      .from('events')
-      .select('*')
-      .eq('status', 'open')
-      .gte('end_date', todayMYT())
-      .order('start_date', { ascending: true }),
-  ) as EventRow[];
+  // Expiry runs alongside the event query; stall counts are read after it.
+  const [, eventsRes] = await Promise.all([
+    expireStaleHolds(),
+    supabase.from('events').select('*').eq('status', 'open').gte('end_date', todayMYT()).order('start_date', { ascending: true }),
+  ]);
+  const events = must(eventsRes) as EventRow[];
   return NextResponse.json({ events: await listEventSummaries(events) });
 });

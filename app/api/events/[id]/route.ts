@@ -12,7 +12,8 @@ import { loadEventDetail } from '@/lib/server/events';
 export const dynamic = 'force-dynamic';
 
 export const GET = handle(async (req, { params }: { params: { id: string } }) => {
-  const ctx = await getAuthContext(req);
-  const detail = await loadEventDetail(params.id, { vendorId: ctx?.vendor?.id ?? null });
+  // Login lookup runs in parallel with the map queries (see loadEventDetail).
+  const viewer = getAuthContext(req).then((ctx) => ({ vendorId: ctx?.vendor?.id ?? null }));
+  const detail = await loadEventDetail(params.id, viewer);
   return NextResponse.json(detail);
 });

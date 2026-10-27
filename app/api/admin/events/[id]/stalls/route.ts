@@ -18,10 +18,13 @@
  * Stalls tied to an online booking are never changed here. Their status
  * moves only via confirm/cancel on the Bookings screen, so the booking and the
  * map can't drift apart. Such stalls are returned in `skipped`.
+ *
+ * Response: { ok, skipped, detail } where `detail` is the refreshed map.
  */
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
+import { loadEventDetail } from '@/lib/server/events';
 import type { StallStatus } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -100,5 +103,6 @@ export const PATCH = handle(async (req, { params }: { params: { id: string } }) 
     }
   }
 
-  return NextResponse.json({ ok: true, skipped });
+  // Return the refreshed map so the page doesn't need a second request.
+  return NextResponse.json({ ok: true, skipped, detail: await loadEventDetail(params.id, 'admin') });
 });

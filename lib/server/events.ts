@@ -10,6 +10,9 @@ import { HttpError, must } from './auth';
 import { compareStallNo } from '../util';
 import type { EventDetail, EventRow, EventSummary, Layout, MapStall, StallStatus } from '../types';
 
+/** Who is looking at a map: an admin, or a vendor (possibly logged out). */
+export type Viewer = 'admin' | { vendorId: string | null };
+
 /** Release any unpaid holds past their deadline (see SQL expire_stale_holds). */
 export async function expireStaleHolds(): Promise<void> {
   const { error } = await supabase.rpc('expire_stale_holds');
@@ -42,16 +45,28 @@ export async function listEventSummaries(events: EventRow[]): Promise<EventSumma
 /**
  * Load an event with its layout and every stall's geometry + status.
  *
- * @param viewer  'admin' → include vendor names/ids.
- *                { vendorId } → hide other vendors; flag the viewer's own stalls.
+ * @param viewerIn 'admin' → include vendor names/ids.
+ *                 { vendorId } → hide other vendors; flag the viewer's own stalls.
+ *                 May be a Promise, so the caller's login check can run in
+ *                 parallel with these queries instead of before them.
+ *
+ * SPEED: the database is far enough away that each sequential round trip
+ * is noticeable, so independent calls are grouped with Promise.all:
+ *   trip 1: expire stale holds  ‖  fetch event row  ‖  (caller's auth)
+ *   trip 2: layout  ‖  stall geometry  ‖  event stalls
  */
 export async function loadEventDetail(
   eventId: string,
-  viewer: 'admin' | { vendorId: string | null },
+  viewerIn: Viewer | Promise<Viewer>,
 ): Promise<EventDetail> {
-  await expireStaleHolds();
-
-  const event = must(await supabase.from('events').select('*').eq('id', eventId).maybeSingle()) as EventRow | null;
+  // Expiry must finish before we read stall statuses (trip 2), but the event
+  // row doesn't depend on it, so they run together.
+  const [, eventRes, viewer] = await Promise.all([
+    expireStaleHolds(),
+    supabase.from('events').select('*').eq('id', eventId).maybeSingle(),
+    viewerIn,
+  ]);
+  const event = must(eventRes) as EventRow | null;
   if (!event) throw new HttpError(404, 'Event not found');
   // Vendors may only see events that are open (or closed, for history).
   if (viewer !== 'admin' && event.status === 'draft') throw new HttpError(404, 'Event not found');

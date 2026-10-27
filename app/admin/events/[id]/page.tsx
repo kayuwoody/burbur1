@@ -94,11 +94,12 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
     setBusy(true);
     setMsg(null);
     try {
-      const r = await api<{ skipped: string[] }>(`/api/admin/events/${params.id}/stalls`, {
+      // The response includes the refreshed map, so no second fetch needed.
+      const r = await api<{ skipped: string[]; detail: EventDetail }>(`/api/admin/events/${params.id}/stalls`, {
         method: 'PATCH',
         body: { stall_nos: [...selected], ...body },
       });
-      await load();
+      setDetail(r.detail);
       setMsg({
         text: r.skipped.length
           ? `Done. Skipped ${r.skipped.join(', ')} (status didn't allow it; online bookings are managed on the Bookings page).`

@@ -18,9 +18,9 @@ const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
 
 export const POST = handle(async (req, { params }: { params: { id: string } }) => {
-  const ctx = await requireVendor(req);
-  // Expire first so an overdue booking can't sneak a receipt in after release.
-  await expireStaleHolds();
+  // Expire (in parallel with the login check) before reading the booking, so
+  // an overdue booking can't sneak a receipt in after its stalls were released.
+  const [ctx] = await Promise.all([requireVendor(req), expireStaleHolds()]);
 
   const booking = must(
     await supabase.from('bookings').select('id, vendor_id, status').eq('id', params.id).maybeSingle(),

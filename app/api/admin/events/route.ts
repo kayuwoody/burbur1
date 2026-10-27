@@ -22,9 +22,11 @@ import type { EventRow } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export const GET = handle(async (req) => {
-  await requireAdmin(req);
-  await expireStaleHolds();
-  const [events, layouts] = await Promise.all([
+  // Auth, expiry and the two reads are independent → one round trip.
+  // (Expiry only affects counts slightly; the next load is exact.)
+  const [, , events, layouts] = await Promise.all([
+    requireAdmin(req),
+    expireStaleHolds(),
     supabase.from('events').select('*').order('start_date', { ascending: false }).then(must),
     supabase.from('layouts').select('id, name').order('name').then(must),
   ]);

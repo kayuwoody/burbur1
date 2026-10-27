@@ -4,7 +4,7 @@ Event stall booking system. Next.js 14 App Router on Vercel, its **own** Supabas
 
 ## Deployment
 - **Repo**: `kayuwoody/burbur1`
-- Hosting: Vercel. Never push to `main` directly.
+- Hosting: Vercel, functions pinned to `sin1` (Singapore) in `vercel.json` to sit next to the Supabase project. If the Supabase region changes, change this too.
 
 ## Env vars
 ```
@@ -21,6 +21,8 @@ NEXT_PUBLIC_SITE_URL
 - Admins = rows in `admins` table. Vendors = `vendors.auth_user_id`.
 - Client pages guard with `useRequireAuth('user'|'vendor'|'admin')` (navigation only; the server is the real check).
 - Route files may only export HTTP handlers + config; shared helpers go in `lib/server/`.
+- Auth uses `supabase.auth.getClaims(token)` (local JWT verification), not `getUser` (network trip).
+- Performance: every DB call is a network round trip. Group independent calls with `Promise.all` (e.g. auth check ‖ `expireStaleHolds()` ‖ reads that don't depend on expiry). Mutations should return the refreshed data rather than forcing a second fetch.
 
 ## Data model (supabase/migrations/001_init.sql)
 - `layouts` (+ `blocks` jsonb for grey shapes) / `layout_stalls` (x,y,w,h): master floor plan

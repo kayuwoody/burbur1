@@ -35,10 +35,15 @@ export async function getAuthContext(req: Request): Promise<AuthContext | null> 
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return null;
 
-  // Ask Supabase Auth to validate the JWT and return the user it belongs to.
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) return null;
-  const user = data.user;
+  // Verify the JWT. CONCEPT: getClaims() checks the token's signature
+  // LOCALLY against the project's public signing keys (fetched once and
+  // cached), so it usually costs no network round trip. getUser() would ask
+  // the Auth server on every request (~1 extra trip per click).
+  // Projects still on the legacy shared-secret signing key fall back to a
+  // server check automatically, so this is never less secure.
+  const { data, error } = await supabase.auth.getClaims(token);
+  if (error || !data?.claims?.sub) return null;
+  const user = { id: data.claims.sub, email: (data.claims.email as string | undefined) ?? null };
 
   // Admin flag and vendor profile are independent: an admin may also be a
   // vendor (handy for testing), and most vendors are not admins.
@@ -49,7 +54,7 @@ export async function getAuthContext(req: Request): Promise<AuthContext | null> 
 
   return {
     userId: user.id,
-    email: user.email ?? null,
+    email: user.email,
     isAdmin: !!adminRes.data,
     vendor: (vendorRes.data as Vendor | null) ?? null,
   };

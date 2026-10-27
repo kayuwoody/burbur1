@@ -16,8 +16,8 @@ export const dynamic = 'force-dynamic';
 type Ctx = { params: { id: string } };
 
 export const GET = handle(async (req, { params }: Ctx) => {
-  await requireAdmin(req);
-  return NextResponse.json(await loadEventDetail(params.id, 'admin'));
+  // Admin check runs in parallel with the queries; a non-admin still gets 403.
+  return NextResponse.json(await loadEventDetail(params.id, requireAdmin(req).then(() => 'admin' as const)));
 });
 
 export const PATCH = handle(async (req, { params }: Ctx) => {

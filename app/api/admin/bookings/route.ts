@@ -12,8 +12,8 @@ import { loadBookings } from '@/lib/server/bookings';
 export const dynamic = 'force-dynamic';
 
 export const GET = handle(async (req) => {
-  await requireAdmin(req);
-  await expireStaleHolds();
+  // Login check and hold expiry don't depend on each other → run together.
+  await Promise.all([requireAdmin(req), expireStaleHolds()]);
 
   const statusParam = new URL(req.url).searchParams.get('status');
   const statuses = statusParam ? statusParam.split(',').filter(Boolean) : undefined;

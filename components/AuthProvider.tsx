@@ -13,7 +13,7 @@
  */
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Session } from '@supabase/supabase-js';
 import { supabaseBrowser } from '@/lib/supabaseBrowser';
@@ -35,6 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  // Which user /api/me was last loaded for, to skip redundant reloads.
+  const loadedFor = useRef<string | null | undefined>(undefined);
 
   /** Look up profile/admin status for the current session. */
   const loadMe = useCallback(async (s: Session | null) => {
@@ -54,13 +56,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const sb = supabaseBrowser();
     sb.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
+      loadedFor.current = data.session?.user.id ?? null;
       await loadMe(data.session);
       setLoading(false);
     });
     const { data: sub } = sb.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      // Token refreshes don't change who the user is — skip the refetch.
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+      // CONCEPT: Supabase re-emits SIGNED_IN whenever the tab regains focus.
+      // Only reload the profile (and show a loading state) when the actual
+      // user changed: a real login, logout or account switch. Otherwise every
+      // tab switch would blank the page and refetch everything.
+      const uid = s?.user.id ?? null;
+      if (event === 'USER_UPDATED' || uid !== loadedFor.current) {
+        loadedFor.current = uid;
         setLoading(true);
         loadMe(s).finally(() => setLoading(false));
       }

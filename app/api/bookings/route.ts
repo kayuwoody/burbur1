@@ -15,8 +15,7 @@ import { loadBookings } from '@/lib/server/bookings';
 export const dynamic = 'force-dynamic';
 
 export const GET = handle(async (req) => {
-  const ctx = await requireVendor(req);
-  await expireStaleHolds();
+  const [ctx] = await Promise.all([requireVendor(req), expireStaleHolds()]);
   return NextResponse.json({ bookings: await loadBookings({ vendorId: ctx.vendor.id }) });
 });
 
