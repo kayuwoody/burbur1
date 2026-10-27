@@ -31,6 +31,7 @@ NEXT_PUBLIC_SITE_URL
 - `bookings` (status `pending_payment|payment_submitted|confirmed|cancelled|expired`, `ref` short code) + `booking_items` (price snapshot)
 - `vendors`: `vendor_code` (auto `V0001` via `next_vendor_code()`, admin-editable, unique), `vendor_type_id` → `vendor_types`, `offerings`, `contact_name` (contact person), `phone` (WhatsApp), `email`, `address`, `website` (single, own site), `social_links text[]` (any number; platform detected from domain by `socialPlatform()` in `lib/util.ts`, see `006_social_links.sql`), `notes` (admin-only). Legacy `category` and `office_phone` columns are unused (copied into `offerings` by `005_vendor_details.sql`). Field rules live in `lib/server/vendors.ts` (`cleanVendorInput` with `admin` flag).
 - `vendor_types`: admin-managed list (Settings page); delete refused while in use
+- Vendor CSV import: parsing/mapping in `lib/vendorImport.ts` (browser), validation/matching/saving in `lib/server/vendorImport.ts` (same code for dry-run preview and commit). Bulk inserts use `defaultToNull: false` so missing keys take column defaults.
 - `settings` (single row id=1): bank details, hold_hours
 - `notification_log`: WhatsApp sends per event/vendor
 - Storage bucket `payment-receipts` (private; signed URLs)

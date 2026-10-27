@@ -52,7 +52,10 @@ export default function AdminVendorsPage() {
     <>
       <div className="spread">
         <h1>Vendors</h1>
-        <button className="btn btn-primary" onClick={() => setAdding((a) => !a)}>{adding ? 'Close' : '+ Add vendor'}</button>
+        <div className="row">
+          <Link href="/admin/vendors/import" className="btn">Import CSV</Link>
+          <button className="btn btn-primary" onClick={() => setAdding((a) => !a)}>{adding ? 'Close' : '+ Add vendor'}</button>
+        </div>
       </div>
 
       {adding && (
