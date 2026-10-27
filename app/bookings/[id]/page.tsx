@@ -10,6 +10,7 @@ import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
 import { BOOKING_STATUS_LABEL, formatDateTime, rm } from '@/lib/util';
 import BookingItems from '@/components/BookingItems';
+import DocumentLinks from '@/components/DocumentLinks';
 import type { Booking, Settings } from '@/lib/types';
 
 export default function BookingDetailPage({ params }: { params: { id: string } }) {
@@ -114,6 +115,16 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
       {b.status === 'expired' && <p className="card error">This hold expired before payment was received, so the stalls were released.</p>}
       {b.status === 'cancelled' && (
         <p className="card error">This booking was cancelled.{b.admin_note ? ` Note: ${b.admin_note}` : ''}</p>
+      )}
+
+      {b.docs?.some((d) => !d.voided_at) && (
+        <div className="card stack">
+          <strong>Documents</strong>
+          <DocumentLinks docs={b.docs} />
+          <p className="small muted" style={{ margin: 0 }}>
+            {b.status === 'confirmed' ? 'Your official receipt is ready.' : 'Your receipt will appear here once we confirm your payment.'}
+          </p>
+        </div>
       )}
 
       <Link href="/bookings" className="btn">← My bookings</Link>

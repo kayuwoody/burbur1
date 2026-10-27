@@ -33,12 +33,19 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
   const [price, setPrice] = useState('');
   const [power, setPower] = useState('');
   const [assignTo, setAssignTo] = useState('');
-  const [eventForm, setEventForm] = useState({ name: '', notes: '', end_date: '' });
+  const [eventForm, setEventForm] = useState({ name: '', notes: '', end_date: '', venue: '', doc_prefix: '', doc_next_no: '' });
 
   const load = useCallback(async () => {
     const d = await api<EventDetail>(`/api/admin/events/${params.id}`);
     setDetail(d);
-    setEventForm({ name: d.event.name, notes: d.event.notes ?? '', end_date: d.event.end_date });
+    setEventForm({
+      name: d.event.name,
+      notes: d.event.notes ?? '',
+      end_date: d.event.end_date,
+      venue: d.event.venue ?? '',
+      doc_prefix: d.event.doc_prefix ?? '',
+      doc_next_no: String(d.event.doc_next_no ?? 1),
+    });
   }, [params.id]);
 
   useEffect(() => {
@@ -113,7 +120,15 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
   }
 
   /** Save event name/notes/status. */
-  async function saveEvent(update: { name?: string; notes?: string; end_date?: string; status?: EventStatus }) {
+  async function saveEvent(update: {
+    name?: string;
+    notes?: string;
+    end_date?: string;
+    venue?: string;
+    doc_prefix?: string;
+    doc_next_no?: string | number;
+    status?: EventStatus;
+  }) {
     setBusy(true);
     setMsg(null);
     try {
@@ -156,6 +171,7 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
           </h1>
         </div>
         <div className="row">
+          <Link href={`/admin/events/${event.id}/documents`} className="btn btn-sm">Invoices &amp; receipts</Link>
           <Link href={`/admin/notify?event=${event.id}`} className="btn btn-sm">Notify vendors</Link>
           <Link href="/admin/events" className="btn btn-sm">← Events</Link>
         </div>
@@ -295,6 +311,37 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
                       onChange={(e) => setEventForm((f) => ({ ...f, end_date: e.target.value }))}
                     />
                   </div>
+                </div>
+                <div>
+                  <label>Venue (printed on invoices)</label>
+                  <input
+                    value={eventForm.venue}
+                    placeholder="e.g. EkoCheras Mall"
+                    onChange={(e) => setEventForm((f) => ({ ...f, venue: e.target.value }))}
+                  />
+                </div>
+                <div className="row">
+                  <div style={{ flex: 2 }}>
+                    <label>Invoice number prefix</label>
+                    <input
+                      value={eventForm.doc_prefix}
+                      style={{ textTransform: 'uppercase' }}
+                      onChange={(e) => setEventForm((f) => ({ ...f, doc_prefix: e.target.value }))}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label>Next number</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={eventForm.doc_next_no}
+                      onChange={(e) => setEventForm((f) => ({ ...f, doc_next_no: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="small muted">
+                  Next invoice: {(eventForm.doc_prefix || '…').toUpperCase()}-{String(eventForm.doc_next_no || 1).padStart(5, '0')}
+                  {' '}(receipt adds “R”)
                 </div>
                 <div>
                   <label>Internal notes</label>

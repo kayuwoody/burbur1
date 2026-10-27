@@ -8,6 +8,7 @@ import { supabase } from '@/lib/server/supabase';
 import { handle, must, requireAdmin } from '@/lib/server/auth';
 import { expireStaleHolds } from '@/lib/server/events';
 import { loadBookings } from '@/lib/server/bookings';
+import { bookingNeedsDocuments, syncBookingDocuments } from '@/lib/server/documents';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,10 +19,17 @@ export const GET = handle(async (req) => {
   const statusParam = new URL(req.url).searchParams.get('status');
   const statuses = statusParam ? statusParam.split(',').filter(Boolean) : undefined;
 
-  const [bookings, all] = await Promise.all([
+  let [bookings, all] = await Promise.all([
     loadBookings({ statuses }),
     supabase.from('bookings').select('status').then(must),
   ]);
+
+  // Backfill invoices/receipts for bookings that predate invoicing.
+  const stale = bookings.filter(bookingNeedsDocuments);
+  if (stale.length) {
+    for (const b of stale) await syncBookingDocuments(b.id).catch((e) => console.error('document sync failed', b.id, e));
+    bookings = await loadBookings({ statuses });
+  }
 
   const counts: Record<string, number> = {};
   (all as { status: string }[]).forEach((b) => (counts[b.status] = (counts[b.status] ?? 0) + 1));

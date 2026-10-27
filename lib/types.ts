@@ -81,6 +81,12 @@ export interface EventRow {
   layout_id: string;
   status: EventStatus;
   notes: string | null;
+  /** Venue name printed on invoices, e.g. 'EkoCheras Mall'. */
+  venue: string | null;
+  /** Invoice number prefix for this event, e.g. 'GVO2609267'. */
+  doc_prefix: string | null;
+  /** Next running number for this event's invoices. */
+  doc_next_no: number;
   created_at: string;
 }
 
@@ -140,7 +146,38 @@ export interface Booking {
   confirmed_at: string | null;
   items: BookingItem[];
   vendor?: Pick<Vendor, 'id' | 'business_name' | 'contact_name' | 'phone' | 'email'> | null;
+  /** Invoices/receipts issued for this booking (including voided ones). */
+  docs?: DocumentSummary[];
 }
+
+/** One line on an invoice/receipt. */
+export interface DocumentLine {
+  description: string;
+  price: number;
+  total: number;
+}
+
+/** Invoice or receipt, as stored (a snapshot taken at issue time). */
+export interface DocumentRow {
+  id: string;
+  kind: 'invoice' | 'receipt';
+  number: string;
+  event_id: string;
+  vendor_id: string;
+  booking_id: string | null;
+  invoice_id: string | null;
+  issued_on: string; // YYYY-MM-DD
+  bill_to_name: string;
+  bill_to_address: string | null;
+  lines: DocumentLine[];
+  total: number;
+  access_token: string;
+  voided_at: string | null;
+  created_at: string;
+}
+
+/** The few fields needed to list/link a document. */
+export type DocumentSummary = Pick<DocumentRow, 'id' | 'kind' | 'number' | 'event_id' | 'access_token' | 'voided_at' | 'issued_on'>;
 
 export interface Settings {
   hold_hours: number;
@@ -148,6 +185,13 @@ export interface Settings {
   bank_account_name: string | null;
   bank_account_no: string | null;
   payment_note: string | null;
+  /** Printed on invoices/receipts. */
+  company_name?: string | null;
+  company_address?: string | null;
+  footer_brand?: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
 }
 
 /** One cart line, kept in localStorage until checkout. */
@@ -165,4 +209,19 @@ export interface MeResponse {
   user: { id: string; email: string | null };
   vendor: Vendor | null;
   isAdmin: boolean;
+}
+
+/** One billable unit on the event's documents screen. */
+export interface DocGroupRow {
+  key: string;
+  vendor: { id: string; vendor_code: string; business_name: string; phone: string | null; contact_name: string | null };
+  booking_id: string | null;
+  booking_ref: string | null;
+  booking_status: string | null;
+  stalls: { stall_no: string; price: number }[];
+  total: number;
+  /** Online booking confirmed, or a manual assignment (admin decides). */
+  can_receipt: boolean;
+  invoice: DocumentSummary | null;
+  receipt: DocumentSummary | null;
 }

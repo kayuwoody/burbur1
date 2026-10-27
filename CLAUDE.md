@@ -32,7 +32,9 @@ NEXT_PUBLIC_SITE_URL
 - `vendors`: `vendor_code` (auto `V0001` via `next_vendor_code()`, admin-editable, unique), `vendor_type_id` → `vendor_types`, `offerings`, `contact_name` (contact person), `phone` (WhatsApp), `email`, `address`, `website` (single, own site), `social_links text[]` (any number; platform detected from domain by `socialPlatform()` in `lib/util.ts`, see `006_social_links.sql`), `notes` (admin-only). Legacy `category` and `office_phone` columns are unused (copied into `offerings` by `005_vendor_details.sql`). Field rules live in `lib/server/vendors.ts` (`cleanVendorInput` with `admin` flag).
 - `vendor_types`: admin-managed list (Settings page); delete refused while in use
 - Vendor CSV import: parsing/mapping in `lib/vendorImport.ts` (browser), validation/matching/saving in `lib/server/vendorImport.ts` (same code for dry-run preview and commit). Bulk inserts use `defaultToNull: false` so missing keys take column defaults.
-- `settings` (single row id=1): bank details, hold_hours
+- `settings` (single row id=1): bank details, hold_hours, company details printed on documents
+- `documents` (`007_documents.sql`): invoices/receipts as snapshots (bill-to, lines jsonb, total). Invoice per (event, vendor, booking|null); receipt per invoice, number = invoice + 'R'. Numbers from `issue_document()` (locks event row; `events.doc_prefix` + `doc_next_no`, 5 digits; idempotent). Voided (not deleted) by `admin_booking_action('cancel')` and `expire_stale_holds()`. PDF via pdf-lib in `lib/server/pdf.ts`; public link `/api/documents/<access_token>`. Issuing helpers in `lib/server/documents.ts` (`syncBookingDocuments` on checkout/confirm/booking view). Built-in PDF fonts can't render CJK (replaced with '?').
+- `events.venue` printed in invoice line items
 - `notification_log`: WhatsApp sends per event/vendor
 - Storage bucket `payment-receipts` (private; signed URLs)
 

@@ -31,6 +31,13 @@ export const PUT = handle(async (req) => {
         bank_account_name: b.bank_account_name?.trim() || null,
         bank_account_no: b.bank_account_no?.trim() || null,
         payment_note: b.payment_note?.trim() || null,
+        // Printed on invoices & receipts.
+        company_name: b.company_name?.trim() || null,
+        company_address: b.company_address?.trim() || null,
+        footer_brand: b.footer_brand?.trim() || null,
+        contact_name: b.contact_name?.trim() || null,
+        contact_phone: b.contact_phone?.trim() || null,
+        contact_email: b.contact_email?.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', 1)

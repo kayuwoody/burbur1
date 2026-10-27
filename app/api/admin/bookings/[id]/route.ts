@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, requireAdmin } from '@/lib/server/auth';
 import { loadBookings } from '@/lib/server/bookings';
+import { syncBookingDocuments } from '@/lib/server/documents';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,9 @@ export const PATCH = handle(async (req, { params }: { params: { id: string } }) 
     throw new HttpError(500, error.message);
   }
 
+  // Confirmed → issue the receipt(s) (and invoice if somehow missing).
+  // Cancelled → documents were voided by the SQL function.
+  if (action === 'confirm') await syncBookingDocuments(params.id);
   const [booking] = await loadBookings({ id: params.id });
   return NextResponse.json({ booking });
 });

@@ -10,7 +10,8 @@ import type { Booking } from '../types';
 const SELECT = `
   *,
   items:booking_items(booking_id, event_id, stall_no, price, event:events(id, name, start_date, end_date)),
-  vendor:vendors(id, business_name, contact_name, phone, email)
+  vendor:vendors(id, business_name, contact_name, phone, email),
+  docs:documents(id, kind, number, event_id, access_token, voided_at, issued_on)
 `;
 
 /**

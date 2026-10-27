@@ -24,6 +24,7 @@ export default function AdminEventsPage() {
     end_date: '',
     name: '',
     layout_id: 'main',
+    venue: '',
     default_price: '',
     default_power_watts: '',
   });
@@ -97,6 +98,10 @@ export default function AdminEventsPage() {
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <label>Venue</label>
+            <input placeholder="e.g. EkoCheras Mall" value={form.venue} onChange={set('venue')} />
           </div>
           <div>
             <label>Default stall price (RM)</label>

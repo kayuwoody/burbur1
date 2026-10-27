@@ -11,6 +11,7 @@ import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, requireVendor } from '@/lib/server/auth';
 import { expireStaleHolds } from '@/lib/server/events';
 import { loadBookings } from '@/lib/server/bookings';
+import { syncBookingDocuments } from '@/lib/server/documents';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,5 +47,8 @@ export const POST = handle(async (req) => {
     throw new HttpError(500, error.message);
   }
 
+  // Issue the invoice(s) now. If this fails the booking still stands; the
+  // booking page retries via bookingNeedsDocuments().
+  await syncBookingDocuments(data as string).catch((e) => console.error('invoice issue failed', e));
   return NextResponse.json({ booking_id: data as string });
 });

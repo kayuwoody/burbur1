@@ -16,7 +16,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
 import { expireStaleHolds, listEventSummaries } from '@/lib/server/events';
-import { eventIdFromDate } from '@/lib/util';
+import { defaultDocPrefix, eventIdFromDate } from '@/lib/util';
 import type { EventRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +43,7 @@ export const POST = handle(async (req) => {
     default_price?: number;
     default_power_watts?: number;
     status?: 'draft' | 'open';
+    venue?: string;
   };
 
   // Dates: start is required; end defaults to start (one-day event).
@@ -76,6 +77,9 @@ export const POST = handle(async (req) => {
       end_date: endDate,
       layout_id: layoutId,
       status: body.status === 'open' ? 'open' : 'draft',
+      venue: body.venue?.trim() || null,
+      // Invoice prefix suggestion (initials + id); editable on the event page.
+      doc_prefix: defaultDocPrefix(name, id),
     }),
   );
 

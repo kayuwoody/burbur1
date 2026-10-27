@@ -44,7 +44,18 @@ export default function AdminSettingsPage() {
     <div className="narrow">
       <h1>Settings</h1>
       <form className="card stack" onSubmit={save}>
-        <strong>Bank transfer details</strong>
+        <strong>Company details (printed on invoices &amp; receipts)</strong>
+        <div><label>Company name</label><input value={s.company_name ?? ''} onChange={set('company_name')} /></div>
+        <div><label>Company address</label><textarea style={{ minHeight: 60 }} value={s.company_address ?? ''} onChange={set('company_address')} /></div>
+        <div className="row">
+          <div style={{ flex: 1 }}><label>Footer brand</label><input value={s.footer_brand ?? ''} onChange={set('footer_brand')} /></div>
+          <div style={{ flex: 1 }}><label>Contact person</label><input value={s.contact_name ?? ''} onChange={set('contact_name')} /></div>
+        </div>
+        <div className="row">
+          <div style={{ flex: 1 }}><label>Contact phone</label><input value={s.contact_phone ?? ''} onChange={set('contact_phone')} /></div>
+          <div style={{ flex: 1 }}><label>Contact email</label><input value={s.contact_email ?? ''} onChange={set('contact_email')} /></div>
+        </div>
+        <strong>Bank transfer details (also printed on invoices)</strong>
         <div><label>Bank</label><input value={s.bank_name ?? ''} onChange={set('bank_name')} /></div>
         <div><label>Account name</label><input value={s.bank_account_name ?? ''} onChange={set('bank_account_name')} /></div>
         <div><label>Account number</label><input value={s.bank_account_no ?? ''} onChange={set('bank_account_no')} /></div>

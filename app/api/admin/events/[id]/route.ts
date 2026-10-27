@@ -2,7 +2,7 @@
  * /api/admin/events/[id] — one event, admin view.
  *
  * GET    → event + layout + every stall incl. vendor name & booking id
- * PATCH  → update { name?, status?, notes?, end_date? }
+ * PATCH  → update { name?, status?, notes?, end_date?, venue?, doc_prefix?, doc_next_no? }
  *          (start date is fixed because it is the event id)
  * DELETE → remove the event; refused if any booking references it.
  */
@@ -22,7 +22,15 @@ export const GET = handle(async (req, { params }: Ctx) => {
 
 export const PATCH = handle(async (req, { params }: Ctx) => {
   await requireAdmin(req);
-  const body = (await req.json()) as { name?: string; status?: string; notes?: string | null; end_date?: string };
+  const body = (await req.json()) as {
+    name?: string;
+    status?: string;
+    notes?: string | null;
+    end_date?: string;
+    venue?: string | null;
+    doc_prefix?: string | null;
+    doc_next_no?: number;
+  };
 
   // Build the update from only the fields that were sent.
   const update: Record<string, unknown> = {};
@@ -35,6 +43,14 @@ export const PATCH = handle(async (req, { params }: Ctx) => {
     update.status = body.status;
   }
   if (body.notes !== undefined) update.notes = body.notes?.trim() || null;
+  if (body.venue !== undefined) update.venue = body.venue?.trim() || null;
+  // Invoice numbering: prefix (e.g. GVO2609267) + next running number.
+  if (body.doc_prefix !== undefined) update.doc_prefix = body.doc_prefix?.trim().toUpperCase() || null;
+  if (body.doc_next_no !== undefined) {
+    const n = Math.round(Number(body.doc_next_no));
+    if (!(n >= 1)) throw new HttpError(400, 'Next invoice number must be 1 or more');
+    update.doc_next_no = n;
+  }
   if (body.end_date !== undefined) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(body.end_date)) throw new HttpError(400, 'Invalid end date');
     const ev = must(await supabase.from('events').select('start_date').eq('id', params.id).maybeSingle()) as

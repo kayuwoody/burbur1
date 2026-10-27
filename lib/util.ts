@@ -173,3 +173,63 @@ export function socialPlatform(url: string): { name: string; handle: string | nu
     return { name: 'Link', handle: null };
   }
 }
+
+/**
+ * Calendar date in Malaysia time for a timestamp: '2026-09-18T17:30:00Z' → '2026-09-19'.
+ */
+export function dateMYT(ts: string | number | Date): string {
+  return new Date(new Date(ts).getTime() + 8 * 3600_000).toISOString().slice(0, 10);
+}
+
+/**
+ * Long date with ordinal, as on the company's invoices: '2026-09-19' → '19th September 2026'.
+ * CONCEPT: 11th/12th/13th are the exceptions to the 1st/2nd/3rd rule.
+ */
+export function formatDocDate(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const month = new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' });
+  const ORDINAL: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
+  const suffix = d % 100 >= 11 && d % 100 <= 13 ? 'th' : ORDINAL[d % 10] ?? 'th';
+  return `${d}${suffix} ${month} ${y}`;
+}
+
+/**
+ * Compact event dates for invoice line items, matching the existing style:
+ *   same day   → '26 Sept 2026'
+ *   same month → '26-27 Sept 2026'
+ *   two months → '28 Nov - 6 Dec 2026'
+ *   two years  → '30 Dec 2026 - 2 Jan 2027'
+ */
+export function docDateRange(start: string, end: string): string {
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const [ey, em, ed] = (end || start).split('-').map(Number);
+  if (sy !== ey) return `${sd} ${MONTHS[sm - 1]} ${sy} - ${ed} ${MONTHS[em - 1]} ${ey}`;
+  if (sm !== em) return `${sd} ${MONTHS[sm - 1]} - ${ed} ${MONTHS[em - 1]} ${ey}`;
+  if (sd !== ed) return `${sd}-${ed} ${MONTHS[sm - 1]} ${sy}`;
+  return `${sd} ${MONTHS[sm - 1]} ${sy}`;
+}
+
+/** Amount as printed on documents: whole ringgit without decimals ('120'), else 2 dp ('120.50'). */
+export function docAmount(n: number): string {
+  return Number.isInteger(n) ? n.toLocaleString('en-MY') : n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Suggested invoice prefix for a new event: initials of the name + the
+ * event id. 'Good Vibes Only' on 261128 → 'GVO261128'. Admins can change it.
+ */
+export function defaultDocPrefix(name: string, eventId: string): string {
+  const initials = name
+    .split(/\s+/)
+    .filter((w) => /^[A-Za-z]/.test(w))
+    .map((w) => w[0].toUpperCase())
+    .join('')
+    .slice(0, 4);
+  return `${initials || 'EV'}${eventId}`;
+}
+
+/** Public link to an invoice/receipt PDF (works without login; token is unguessable). */
+export function documentUrl(token: string, origin = ''): string {
+  return `${origin}/api/documents/${token}`;
+}

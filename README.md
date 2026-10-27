@@ -17,6 +17,7 @@ Online stall booking for events. Vendors log in, pick an event date, click stall
    - `supabase/migrations/004_event_date_range.sql`: events get a start and end date
    - `supabase/migrations/005_vendor_details.sql`: vendor ID codes, vendor types, offerings, address, website
    - `supabase/migrations/006_social_links.sql`: any number of social media links per vendor
+   - `supabase/migrations/007_documents.sql`: invoices & receipts (company details pre-filled)
 3. **Authentication → Providers → Email**: keep it enabled. Leave **Confirm email** ON, because it prevents someone from claiming a vendor record with an email they don't own.
 4. **Authentication → URL Configuration**: set **Site URL** to your Vercel URL and add `https://<your-app>.vercel.app/**` to Redirect URLs.
 
@@ -66,6 +67,7 @@ Unpaid holds are released automatically after the hold time. Once a receipt is u
 - **Events**: create with a start and end date (can span months). ID = `YYMMDD` of the start date; the end date can be changed later. Vendors can book until the end date passes. All layout stalls are copied in with a default price and power. New events start as **Draft** (hidden from vendors).
 - **Event map**: click stalls to select (multi-select), then set price/power, **grey out (block)**, or **assign to a vendor directly** for offline arrangements. Switch the event to **Open** when ready. The panel shows booked revenue and power totals.
 - **Bookings**: view the receipt, **Confirm payment** or **Cancel**, plus a WhatsApp button with a pre-written message.
+- **Invoices & receipts**: PDFs in the company's format. Online bookings get an invoice at checkout and a receipt when payment is confirmed; cancelled/expired bookings' documents are voided. Event page → *Invoices & receipts* lists every vendor in the event to issue missing documents (e.g. manually assigned vendors), edit a number/date/bill-to, or WhatsApp the PDF link. Numbering per event: `<prefix>-<5 digits>` (prefix & next number set on the event page); receipt = invoice number + `R`. Company details in Settings.
 - **Import vendors** (Vendors → Import CSV): upload a CSV from Excel/Sheets, check the auto-matched columns, preview, import. Existing vendors are matched by vendor ID → email → phone and updated (blank cells never erase data); unknown vendor types are created.
 - **Vendors**: vendor ID (auto `V0001`, editable), type (Products / Services / Activities, managed in Settings), offerings, contact person, phone (WhatsApp), email, address, website, social media links (as many as they have; platform recognised automatically), internal notes, booking history. Filter by type and search everything. Vendors you add without a login are linked automatically when they sign up with the same email.
 - **Notify**: pick an event, write a message with `{name} {event} {date} {link}` placeholders, and tap **Send** per vendor. This opens WhatsApp with the message ready, using your existing WhatsApp Business app (free). Sends are logged so you can see who hasn't been told yet.

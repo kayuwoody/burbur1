@@ -2,7 +2,8 @@
  * /admin/bookings — check bank transfer receipts and confirm or reject.
  *
  * Default tab is "Receipt submitted" (the admin's to-do list). Each booking
- * has: View receipt (signed link), Confirm, Cancel, and a WhatsApp button
+ * has: View transfer slip (signed link), Confirm, Cancel, invoice/receipt PDFs
+ * (issued automatically: invoice at checkout, receipt on confirm), and a WhatsApp button
  * that opens a pre-written message to the vendor.
  */
 'use client';
@@ -11,8 +12,9 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { BOOKING_STATUS_LABEL, formatDateRange, formatDateTime, rm, waLink } from '@/lib/util';
+import { BOOKING_STATUS_LABEL, documentUrl, formatDateRange, formatDateTime, rm, waLink } from '@/lib/util';
 import BookingItems from '@/components/BookingItems';
+import DocumentLinks from '@/components/DocumentLinks';
 import type { Booking, BookingStatus } from '@/lib/types';
 
 const TABS: (BookingStatus | 'all')[] = ['payment_submitted', 'pending_payment', 'confirmed', 'cancelled', 'expired', 'all'];
@@ -24,11 +26,20 @@ const TABS: (BookingStatus | 'all')[] = ['payment_submitted', 'pending_payment',
 function vendorMessage(b: Booking): string {
   const name = b.vendor?.contact_name || b.vendor?.business_name || '';
   const lines = b.items.map((i) => `• ${i.event?.name ?? i.event_id} (${i.event ? formatDateRange(i.event.start_date, i.event.end_date) : ''}): Stall ${i.stall_no}`);
+  // Links to the live documents of a kind, one per line (PDFs open without login).
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  const links = (kind: 'invoice' | 'receipt') =>
+    (b.docs ?? [])
+      .filter((d) => d.kind === kind && !d.voided_at)
+      .map((d) => `${d.number}: ${documentUrl(d.access_token, origin)}`)
+      .join('\n');
   if (b.status === 'confirmed') {
-    return `Hi ${name}, your stall booking #${b.ref} is confirmed!\n${lines.join('\n')}\nThank you, see you there!`;
+    const receipts = links('receipt');
+    return `Hi ${name}, your stall booking #${b.ref} is confirmed!\n${lines.join('\n')}${receipts ? `\n\nReceipt:\n${receipts}` : ''}\nThank you, see you there!`;
   }
   if (b.status === 'pending_payment') {
-    return `Hi ${name}, a reminder that booking #${b.ref} (${rm(b.total)}) is awaiting payment:\n${lines.join('\n')}\nPlease transfer and upload your receipt in the booking page to secure your stalls.`;
+    const invoices = links('invoice');
+    return `Hi ${name}, a reminder that booking #${b.ref} (${rm(b.total)}) is awaiting payment:\n${lines.join('\n')}${invoices ? `\n\nInvoice:\n${invoices}` : ''}\nPlease transfer and upload your receipt in the booking page to secure your stalls.`;
   }
   return `Hi ${name}, regarding your booking #${b.ref}:\n${lines.join('\n')}\n`;
 }
@@ -152,8 +163,9 @@ export default function AdminBookingsPage() {
                 <strong>{rm(b.total)}</strong>
               </div>
               {b.admin_note && <div className="small muted">Note: {b.admin_note}</div>}
+              <DocumentLinks docs={b.docs} showVoid />
               <div className="row">
-                {b.receipt_path && <button className="btn btn-sm" onClick={() => viewReceipt(b.id)}>View receipt</button>}
+                {b.receipt_path && <button className="btn btn-sm" onClick={() => viewReceipt(b.id)}>View transfer slip</button>}
                 {open && (
                   <button className="btn btn-sm btn-ok" disabled={busyId === b.id} onClick={() => act(b, 'confirm')}>
                     Confirm payment
