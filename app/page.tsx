@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { formatDate, rm } from '@/lib/util';
+import { eventDays, formatDateRange, rm } from '@/lib/util';
 import type { EventSummary } from '@/lib/types';
 
 export default function HomePage() {
@@ -29,7 +29,10 @@ export default function HomePage() {
       <div className="grid">
         {events?.map((e) => (
           <Link key={e.id} href={`/events/${e.id}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="small muted">{formatDate(e.event_date)}</div>
+            <div className="small muted">
+              {formatDateRange(e.start_date, e.end_date)}
+              {eventDays(e.start_date, e.end_date) > 1 && ` · ${eventDays(e.start_date, e.end_date)} days`}
+            </div>
             <h2 style={{ margin: '4px 0 8px' }}>{e.name}</h2>
             <div className="spread small">
               <span>

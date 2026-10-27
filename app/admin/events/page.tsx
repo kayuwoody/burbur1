@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { eventIdFromDate, formatDate } from '@/lib/util';
+import { eventDays, eventIdFromDate, formatDateRange } from '@/lib/util';
 import type { EventSummary } from '@/lib/types';
 
 export default function AdminEventsPage() {
@@ -19,7 +19,14 @@ export default function AdminEventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<EventSummary[] | null>(null);
   const [layouts, setLayouts] = useState<{ id: string; name: string }[]>([]);
-  const [form, setForm] = useState({ event_date: '', name: '', layout_id: 'main', default_price: '', default_power_watts: '' });
+  const [form, setForm] = useState({
+    start_date: '',
+    end_date: '',
+    name: '',
+    layout_id: 'main',
+    default_price: '',
+    default_power_watts: '',
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,9 +75,16 @@ export default function AdminEventsPage() {
         <strong>New event</strong>
         <div className="grid">
           <div>
-            <label>Date *</label>
-            <input type="date" required value={form.event_date} onChange={set('event_date')} />
-            {form.event_date && <div className="small muted">Event ID: {eventIdFromDate(form.event_date)}</div>}
+            <label>Start date *</label>
+            <input type="date" required value={form.start_date} onChange={set('start_date')} />
+            {form.start_date && <div className="small muted">Event ID: {eventIdFromDate(form.start_date)}</div>}
+          </div>
+          <div>
+            <label>End date (leave blank for a one-day event)</label>
+            <input type="date" min={form.start_date || undefined} value={form.end_date} onChange={set('end_date')} />
+            {form.start_date && form.end_date && form.end_date >= form.start_date && (
+              <div className="small muted">{eventDays(form.start_date, form.end_date)} days</div>
+            )}
           </div>
           <div>
             <label>Name *</label>
@@ -104,14 +118,14 @@ export default function AdminEventsPage() {
         <table>
           <thead>
             <tr>
-              <th>ID</th><th>Date</th><th>Name</th><th>Status</th><th>Booked</th><th>Held</th><th>Free</th><th>Blocked</th>
+              <th>ID</th><th>Dates</th><th>Name</th><th>Status</th><th>Booked</th><th>Held</th><th>Free</th><th>Blocked</th>
             </tr>
           </thead>
           <tbody>
             {events?.map((e) => (
               <tr key={e.id}>
                 <td><Link href={`/admin/events/${e.id}`}>{e.id}</Link></td>
-                <td>{formatDate(e.event_date)}</td>
+                <td>{formatDateRange(e.start_date, e.end_date)}</td>
                 <td><Link href={`/admin/events/${e.id}`}>{e.name}</Link></td>
                 <td><span className={`pill pill-${e.status}`}>{e.status}</span></td>
                 <td>{e.counts.booked}</td>

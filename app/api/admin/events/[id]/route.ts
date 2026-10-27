@@ -2,7 +2,8 @@
  * /api/admin/events/[id] — one event, admin view.
  *
  * GET    → event + layout + every stall incl. vendor name & booking id
- * PATCH  → update { name?, status?, notes? }
+ * PATCH  → update { name?, status?, notes?, end_date? }
+ *          (start date is fixed because it is the event id)
  * DELETE → remove the event; refused if any booking references it.
  */
 import { NextResponse } from 'next/server';
@@ -21,7 +22,7 @@ export const GET = handle(async (req, { params }: Ctx) => {
 
 export const PATCH = handle(async (req, { params }: Ctx) => {
   await requireAdmin(req);
-  const body = (await req.json()) as { name?: string; status?: string; notes?: string | null };
+  const body = (await req.json()) as { name?: string; status?: string; notes?: string | null; end_date?: string };
 
   // Build the update from only the fields that were sent.
   const update: Record<string, unknown> = {};
@@ -34,6 +35,15 @@ export const PATCH = handle(async (req, { params }: Ctx) => {
     update.status = body.status;
   }
   if (body.notes !== undefined) update.notes = body.notes?.trim() || null;
+  if (body.end_date !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.end_date)) throw new HttpError(400, 'Invalid end date');
+    const ev = must(await supabase.from('events').select('start_date').eq('id', params.id).maybeSingle()) as
+      | { start_date: string }
+      | null;
+    if (!ev) throw new HttpError(404, 'Event not found');
+    if (body.end_date < ev.start_date) throw new HttpError(400, 'End date must be on or after the start date');
+    update.end_date = body.end_date;
+  }
 
   const event = must(await supabase.from('events').update(update).eq('id', params.id).select().maybeSingle());
   if (!event) throw new HttpError(404, 'Event not found');

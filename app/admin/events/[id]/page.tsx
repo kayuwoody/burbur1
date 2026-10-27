@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { formatDate, formatDateTime, rm } from '@/lib/util';
+import { formatDateRange, formatDateTime, rm } from '@/lib/util';
 import StallMap, { Legend, type StallLook } from '@/components/StallMap';
 import type { EventDetail, EventStatus, MapStall, Vendor } from '@/lib/types';
 
@@ -33,12 +33,12 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
   const [price, setPrice] = useState('');
   const [power, setPower] = useState('');
   const [assignTo, setAssignTo] = useState('');
-  const [eventForm, setEventForm] = useState({ name: '', notes: '' });
+  const [eventForm, setEventForm] = useState({ name: '', notes: '', end_date: '' });
 
   const load = useCallback(async () => {
     const d = await api<EventDetail>(`/api/admin/events/${params.id}`);
     setDetail(d);
-    setEventForm({ name: d.event.name, notes: d.event.notes ?? '' });
+    setEventForm({ name: d.event.name, notes: d.event.notes ?? '', end_date: d.event.end_date });
   }, [params.id]);
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
   }
 
   /** Save event name/notes/status. */
-  async function saveEvent(update: { name?: string; notes?: string; status?: EventStatus }) {
+  async function saveEvent(update: { name?: string; notes?: string; end_date?: string; status?: EventStatus }) {
     setBusy(true);
     setMsg(null);
     try {
@@ -149,7 +149,7 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
     <>
       <div className="spread">
         <div>
-          <div className="small muted">{formatDate(event.event_date)} · Event {event.id}</div>
+          <div className="small muted">{formatDateRange(event.start_date, event.end_date)} · Event {event.id}</div>
           <h1 style={{ marginTop: 4 }}>
             {event.name} <span className={`pill pill-${event.status}`}>{event.status}</span>
           </h1>
@@ -279,6 +279,21 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
                 <div>
                   <label>Name</label>
                   <input value={eventForm.name} onChange={(e) => setEventForm((f) => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div className="row">
+                  <div style={{ flex: 1 }}>
+                    <label>Start date (fixed: it's the event ID)</label>
+                    <input type="date" value={event.start_date} disabled />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label>End date</label>
+                    <input
+                      type="date"
+                      min={event.start_date}
+                      value={eventForm.end_date}
+                      onChange={(e) => setEventForm((f) => ({ ...f, end_date: e.target.value }))}
+                    />
+                  </div>
                 </div>
                 <div>
                   <label>Internal notes</label>

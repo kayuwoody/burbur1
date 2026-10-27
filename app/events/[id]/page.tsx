@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { toggleCartItem, useCart } from '@/lib/cart';
-import { formatDate, rm } from '@/lib/util';
+import { formatDateRange, rm } from '@/lib/util';
 import StallMap, { Legend, type StallLook } from '@/components/StallMap';
 import type { EventDetail, MapStall } from '@/lib/types';
 
@@ -64,7 +64,8 @@ export default function EventPage({ params }: { params: { id: string } }) {
     toggleCartItem({
       event_id: event.id,
       event_name: event.name,
-      event_date: event.event_date,
+      start_date: event.start_date,
+      end_date: event.end_date,
       stall_no: s.stall_no,
       price: s.price,
     });
@@ -80,7 +81,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
     <>
       <div className="spread">
         <div>
-          <div className="small muted">{formatDate(event.event_date)} · Event {event.id}</div>
+          <div className="small muted">{formatDateRange(event.start_date, event.end_date)} · Event {event.id}</div>
           <h1 style={{ marginTop: 4 }}>{event.name}</h1>
         </div>
         <Link href="/" className="btn btn-sm">← All dates</Link>

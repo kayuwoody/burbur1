@@ -54,7 +54,8 @@ export interface Layout {
 export interface EventRow {
   id: string; // YYMMDD
   name: string;
-  event_date: string; // YYYY-MM-DD
+  start_date: string; // YYYY-MM-DD, also encoded in id as YYMMDD
+  end_date: string; // YYYY-MM-DD, same as start_date for one-day events
   layout_id: string;
   status: EventStatus;
   notes: string | null;
@@ -101,7 +102,7 @@ export interface BookingItem {
   event_id: string;
   stall_no: string;
   price: number;
-  event?: Pick<EventRow, 'id' | 'name' | 'event_date'> | null;
+  event?: Pick<EventRow, 'id' | 'name' | 'start_date' | 'end_date'> | null;
 }
 
 export interface Booking {
@@ -131,7 +132,8 @@ export interface Settings {
 export interface CartItem {
   event_id: string;
   event_name: string;
-  event_date: string;
+  start_date: string;
+  end_date: string;
   stall_no: string;
   price: number;
 }

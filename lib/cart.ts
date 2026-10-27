@@ -14,7 +14,8 @@
 import { useEffect, useState } from 'react';
 import type { CartItem } from './types';
 
-const KEY = 'stall_cart_v1';
+// v2: lines carry start_date/end_date (v1 had a single event_date).
+const KEY = 'stall_cart_v2';
 const listeners = new Set<() => void>();
 
 /** Read the cart; storage can throw in private mode, so fall back to empty. */

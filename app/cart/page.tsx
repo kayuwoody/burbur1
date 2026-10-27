@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
 import { removeCartItems, setCart, toggleCartItem, useCart } from '@/lib/cart';
 import { useAuth } from '@/components/AuthProvider';
-import { compareStallNo, formatDate, rm } from '@/lib/util';
+import { compareStallNo, formatDateRange, rm } from '@/lib/util';
 import type { CartItem } from '@/lib/types';
 
 export default function CartPage() {
@@ -27,7 +27,7 @@ export default function CartPage() {
   // Group lines by event so the vendor sees one block per date.
   const groups = new Map<string, CartItem[]>();
   [...cart]
-    .sort((a, b) => a.event_date.localeCompare(b.event_date) || compareStallNo(a.stall_no, b.stall_no))
+    .sort((a, b) => a.start_date.localeCompare(b.start_date) || compareStallNo(a.stall_no, b.stall_no))
     .forEach((c) => groups.set(c.event_id, [...(groups.get(c.event_id) ?? []), c]));
   const total = cart.reduce((s, c) => s + c.price, 0);
 
@@ -78,7 +78,7 @@ export default function CartPage() {
               <div className="spread">
                 <div>
                   <strong>{items[0].event_name}</strong>
-                  <div className="small muted">{formatDate(items[0].event_date)}</div>
+                  <div className="small muted">{formatDateRange(items[0].start_date, items[0].end_date)}</div>
                 </div>
                 <Link href={`/events/${eventId}`} className="btn btn-sm">Edit</Link>
               </div>

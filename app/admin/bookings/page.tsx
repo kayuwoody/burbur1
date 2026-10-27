@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { BOOKING_STATUS_LABEL, formatDate, formatDateTime, rm, waLink } from '@/lib/util';
+import { BOOKING_STATUS_LABEL, formatDateRange, formatDateTime, rm, waLink } from '@/lib/util';
 import BookingItems from '@/components/BookingItems';
 import type { Booking, BookingStatus } from '@/lib/types';
 
@@ -23,7 +23,7 @@ const TABS: (BookingStatus | 'all')[] = ['payment_submitted', 'pending_payment',
  */
 function vendorMessage(b: Booking): string {
   const name = b.vendor?.contact_name || b.vendor?.business_name || '';
-  const lines = b.items.map((i) => `• ${i.event?.name ?? i.event_id} (${i.event ? formatDate(i.event.event_date) : ''}): Stall ${i.stall_no}`);
+  const lines = b.items.map((i) => `• ${i.event?.name ?? i.event_id} (${i.event ? formatDateRange(i.event.start_date, i.event.end_date) : ''}): Stall ${i.stall_no}`);
   if (b.status === 'confirmed') {
     return `Hi ${name}, your stall booking #${b.ref} is confirmed!\n${lines.join('\n')}\nThank you, see you there!`;
   }

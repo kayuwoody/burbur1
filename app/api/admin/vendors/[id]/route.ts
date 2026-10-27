@@ -25,7 +25,7 @@ export const GET = handle(async (req, { params }: Ctx) => {
     loadBookings({ vendorId: params.id }),
     supabase
       .from('event_stalls')
-      .select('event_id, stall_no, price, events(name, event_date)')
+      .select('event_id, stall_no, price, events(name, start_date, end_date)')
       .eq('vendor_id', params.id)
       .is('booking_id', null)
       .eq('status', 'booked')

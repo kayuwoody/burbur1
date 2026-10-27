@@ -9,7 +9,7 @@ import type { Booking } from '../types';
 /** Columns pulled for every booking, using PostgREST embedded joins. */
 const SELECT = `
   *,
-  items:booking_items(booking_id, event_id, stall_no, price, event:events(id, name, event_date)),
+  items:booking_items(booking_id, event_id, stall_no, price, event:events(id, name, start_date, end_date)),
   vendor:vendors(id, business_name, contact_name, phone, email)
 `;
 

@@ -24,7 +24,7 @@ NEXT_PUBLIC_SITE_URL
 
 ## Data model (supabase/migrations/001_init.sql)
 - `layouts` (+ `blocks` jsonb for grey shapes) / `layout_stalls` (x,y,w,h): master floor plan
-- `events`: id = `YYMMDD` of event_date; status `draft|open|closed`
+- `events`: id = `YYMMDD` of `start_date`; `end_date` (≥ start, may cross months); status `draft|open|closed`. Bookable until `end_date` passes (MYT). Columns renamed in `004_event_date_range.sql`; later migrations are append-only.
 - `event_stalls`: (event_id, stall_no) → vendor_id, price, power_watts, status `available|held|booked|blocked`, booking_id, hold_expires_at
 - `bookings` (status `pending_payment|payment_submitted|confirmed|cancelled|expired`, `ref` short code) + `booking_items` (price snapshot)
 - `settings` (single row id=1): bank details, hold_hours

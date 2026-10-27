@@ -1,6 +1,7 @@
 /**
- * GET /api/events — events a vendor can book: status 'open' and dated today
- * or later (Malaysia time), soonest first, with available-stall counts.
+ * GET /api/events — events a vendor can book: status 'open' and not yet
+ * ended (end_date today or later, Malaysia time), soonest start first,
+ * with available-stall counts. Events already under way are still listed.
  *
  * Public on purpose: vendors can browse dates before logging in.
  */
@@ -20,8 +21,8 @@ export const GET = handle(async () => {
       .from('events')
       .select('*')
       .eq('status', 'open')
-      .gte('event_date', todayMYT())
-      .order('event_date', { ascending: true }),
+      .gte('end_date', todayMYT())
+      .order('start_date', { ascending: true }),
   ) as EventRow[];
   return NextResponse.json({ events: await listEventSummaries(events) });
 });

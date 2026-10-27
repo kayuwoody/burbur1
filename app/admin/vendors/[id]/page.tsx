@@ -8,12 +8,12 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { BOOKING_STATUS_LABEL, formatDate, formatDateTime, rm, waLink } from '@/lib/util';
+import { BOOKING_STATUS_LABEL, formatDateRange, formatDateTime, rm, waLink } from '@/lib/util';
 import VendorForm, { type VendorInput } from '@/components/VendorForm';
 import BookingItems from '@/components/BookingItems';
 import type { Booking, Vendor } from '@/lib/types';
 
-type Assigned = { event_id: string; stall_no: string; price: number; events: { name: string; event_date: string } | null };
+type Assigned = { event_id: string; stall_no: string; price: number; events: { name: string; start_date: string; end_date: string } | null };
 
 export default function AdminVendorPage({ params }: { params: { id: string } }) {
   const { ready } = useRequireAuth('admin');
@@ -84,7 +84,7 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
                 {assigned.map((a) => (
                   <tr key={`${a.event_id}/${a.stall_no}`}>
                     <td><Link href={`/admin/events/${a.event_id}`}>{a.events?.name ?? a.event_id}</Link></td>
-                    <td>{a.events ? formatDate(a.events.event_date) : ''}</td>
+                    <td>{a.events ? formatDateRange(a.events.start_date, a.events.end_date) : ''}</td>
                     <td>Stall {a.stall_no}</td>
                     <td className="right">{rm(a.price)}</td>
                   </tr>

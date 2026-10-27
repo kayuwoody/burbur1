@@ -12,13 +12,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { fillTemplate, formatDate, formatDateTime, waLink } from '@/lib/util';
+import { fillTemplate, formatDateRange, formatDateTime, waLink } from '@/lib/util';
 import type { EventSummary } from '@/lib/types';
 
 type Row = { id: string; business_name: string; contact_name: string | null; phone: string | null; category: string | null; last_sent: string | null };
 
 const DEFAULT_TEMPLATE =
-  'Hi {name}! Stall bookings for *{event}* on {date} are now open. Pick your spot here: {link}\n\nFirst come, first served!';
+  'Hi {name}! Stall bookings for *{event}* ({date}) are now open. Pick your spot here: {link}\n\nFirst come, first served!';
 
 export default function AdminNotifyPage() {
   const { ready } = useRequireAuth('admin');
@@ -57,7 +57,7 @@ export default function AdminNotifyPage() {
       name: r.contact_name || r.business_name,
       business: r.business_name,
       event: event?.name ?? '',
-      date: event ? formatDate(event.event_date) : '',
+      date: event ? formatDateRange(event.start_date, event.end_date) : '',
       link: `${site}/events/${eventId}`,
     });
 
@@ -93,7 +93,7 @@ export default function AdminNotifyPage() {
           <select value={eventId} onChange={(e) => setEventId(e.target.value)}>
             {events.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.id} · {e.name} · {formatDate(e.event_date)} {e.status === 'draft' ? '(draft, not visible to vendors yet!)' : ''}
+                {e.id} · {e.name} · {formatDateRange(e.start_date, e.end_date)} {e.status === 'draft' ? '(draft, not visible to vendors yet!)' : ''}
               </option>
             ))}
           </select>

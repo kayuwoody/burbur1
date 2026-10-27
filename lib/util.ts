@@ -32,6 +32,31 @@ export function formatDate(isoDate: string): string {
   });
 }
 
+/**
+ * Format an event's date span for display.
+ * CONCEPT: show only as much as needed so ranges stay short:
+ *   same day        → 'Sun, 15 Nov 2026'
+ *   same month      → '13 – 15 Nov 2026'
+ *   across months   → '28 Nov – 6 Dec 2026'
+ *   across years    → '30 Dec 2026 – 2 Jan 2027'
+ */
+export function formatDateRange(start: string, end: string): string {
+  if (!end || start === end) return formatDate(start);
+  const d = (iso: string, opts: Intl.DateTimeFormatOptions) =>
+    new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-MY', { ...opts, timeZone: 'UTC' });
+  const [sy, sm] = start.split('-');
+  const [ey, em] = end.split('-');
+  const endFull = d(end, { day: 'numeric', month: 'short', year: 'numeric' });
+  if (sy !== ey) return `${d(start, { day: 'numeric', month: 'short', year: 'numeric' })} – ${endFull}`;
+  if (sm !== em) return `${d(start, { day: 'numeric', month: 'short' })} – ${endFull}`;
+  return `${d(start, { day: 'numeric' })} – ${endFull}`;
+}
+
+/** Number of calendar days an event runs, inclusive (15–15 → 1, 15–17 → 3). */
+export function eventDays(start: string, end: string): number {
+  return Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000) + 1;
+}
+
 /** Format a timestamp in Malaysia time, e.g. '15 Nov, 3:05 pm'. */
 export function formatDateTime(ts: string): string {
   return new Date(ts).toLocaleString('en-MY', {

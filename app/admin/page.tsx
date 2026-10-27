@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { formatDate } from '@/lib/util';
+import { formatDateRange } from '@/lib/util';
 import type { Booking, EventSummary } from '@/lib/types';
 
 export default function AdminHome() {
@@ -53,7 +53,7 @@ export default function AdminHome() {
         {upcoming.map((e) => (
           <Link key={e.id} href={`/admin/events/${e.id}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
             <div className="spread">
-              <span className="small muted">{formatDate(e.event_date)}</span>
+              <span className="small muted">{formatDateRange(e.start_date, e.end_date)}</span>
               <span className={`pill pill-${e.status}`}>{e.status}</span>
             </div>
             <strong>{e.name}</strong>
