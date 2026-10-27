@@ -1,0 +1,159 @@
+/* =============================================================================
+   globals.css — the whole app's styling. Plain CSS, no framework.
+   CONCEPT: colours are tokens on :root so the stall map, buttons and badges
+   all share one palette, and changing the brand means editing one block.
+   ============================================================================= */
+
+:root {
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --text: #1c1b19;
+  --muted: #6b6860;
+  --border: #e3e0d8;
+  --brand: #1f4e79;
+  --brand-ink: #ffffff;
+  --danger: #b42318;
+  --ok: #157f3b;
+  --warn: #b26a00;
+
+  /* Stall map colours */
+  --stall-available: #f1dc9c;
+  --stall-available-edge: #c9b26a;
+  --stall-selected: #1f4e79;
+  --stall-mine: #157f3b;
+  --stall-held: #f0a63a;
+  --stall-booked: #c2410c;
+  --stall-taken: #d6d3cc;
+  --stall-blocked: #ebe9e4;
+  --block-fill: #cfcdc8;
+  --block-text: #ffffff;
+
+  --radius: 10px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); overflow-x: clip; }
+a { color: var(--brand); }
+h1 { font-size: 1.5rem; margin: 0 0 0.75rem; }
+h2 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+p { line-height: 1.5; }
+
+/* ---------- Layout shell ---------- */
+.container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.narrow { max-width: 520px; margin: 0 auto; }
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20;
+}
+.header-inner {
+  max-width: 1100px; margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.brand { font-weight: 700; text-decoration: none; color: var(--text); margin-right: auto; }
+.nav { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.nav a, .nav button {
+  text-decoration: none; color: var(--text); padding: 6px 10px; border-radius: 8px;
+  font-size: 0.92rem; background: none; border: 0; cursor: pointer; font: inherit;
+}
+.nav a:hover, .nav button:hover { background: var(--bg); }
+.nav a.active { background: var(--bg); font-weight: 600; }
+.badge-count {
+  display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px;
+  border-radius: 999px; background: var(--brand); color: var(--brand-ink);
+  font-size: 0.75rem; line-height: 20px; text-align: center;
+}
+
+/* ---------- Cards, forms, buttons ---------- */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+}
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.spread { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.stack > * + * { margin-top: 10px; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.error { color: var(--danger); }
+.success { color: var(--ok); }
+.right { text-align: right; }
+
+label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+input, select, textarea {
+  width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font: inherit; background: var(--surface); color: var(--text);
+}
+textarea { min-height: 90px; resize: vertical; }
+input[type='checkbox'] { width: auto; }
+.check { display: flex; gap: 8px; align-items: center; color: var(--text); font-size: 0.95rem; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; font-weight: 500;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+.btn:hover { filter: brightness(0.97); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.btn-danger { color: var(--danger); border-color: #f1c4bf; }
+.btn-ok { background: var(--ok); color: #fff; border-color: var(--ok); }
+.btn-wa { background: #1f9d55; color: #fff; border-color: #1f9d55; }
+.btn-sm { padding: 5px 10px; font-size: 0.85rem; }
+.btn-block { width: 100%; }
+
+/* ---------- Tables ---------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* ---------- Status pills ---------- */
+.pill {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem;
+  font-weight: 600; background: var(--bg); color: var(--muted); white-space: nowrap;
+}
+.pill-pending_payment, .pill-held { background: #fff1db; color: var(--warn); }
+.pill-payment_submitted { background: #e3edf7; color: var(--brand); }
+.pill-confirmed, .pill-open, .pill-booked { background: #dff3e6; color: var(--ok); }
+.pill-cancelled, .pill-expired { background: #f6e3e1; color: var(--danger); }
+.pill-draft, .pill-closed, .pill-blocked { background: var(--bg); color: var(--muted); }
+
+/* ---------- Tabs (filter bar) ---------- */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tab {
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; font: inherit; font-size: 0.88rem;
+}
+.tab.active { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+
+/* ---------- Stall map ---------- */
+.map-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .map-layout { grid-template-columns: minmax(0, 1fr) 340px; } }
+/* The map scrolls sideways inside its box on phones so stalls stay tappable,
+   without making the whole page scroll horizontally. */
+.map-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.map-svg { display: block; width: 100%; min-width: 520px; height: auto; user-select: none; }
+.stall { cursor: pointer; }
+.stall.disabled { cursor: not-allowed; }
+.stall rect { transition: fill 0.12s; }
+.stall:not(.disabled):hover rect { filter: brightness(0.93); }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.82rem; color: var(--muted); margin: 8px 0; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.15); display: inline-block; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; font: inherit; font-size: 0.85rem;
+}
+.chip.on { background: var(--stall-selected); color: #fff; border-color: var(--stall-selected); }
+
+/* Sticky bottom bar showing the cart total on the event page */
+.cart-bar {
+  position: sticky; bottom: 0; z-index: 10; margin-top: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 16px; box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+}
