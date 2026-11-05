@@ -64,8 +64,9 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
       <SocialLinksDisplay website={vendor.website} links={vendor.social_links} />
 
       <div className="card" style={{ marginTop: 12 }}>
-        {/* key forces the form to re-initialise if the vendor record reloads */}
-        <VendorForm key={vendor.id} initial={vendor} submitLabel="Save changes" onSubmit={save} />
+        {/* key re-initialises the form when the saved record changes type, so a
+            typed "Other" type shows as the real (now existing) type after saving */}
+        <VendorForm key={`${vendor.id}:${vendor.vendor_type_id ?? ''}`} initial={vendor} submitLabel="Save changes" onSubmit={save} />
       </div>
 
       <h2>Bookings ({bookings.length})</h2>

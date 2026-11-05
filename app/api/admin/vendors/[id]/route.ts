@@ -10,7 +10,7 @@ import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
 import { loadBookings } from '@/lib/server/bookings';
 import type { Vendor } from '@/lib/types';
-import { cleanVendorInput, saveVendor, VENDOR_SELECT } from '@/lib/server/vendors';
+import { applyTypedVendorType, cleanVendorInput, requireContactFields, saveVendor, VENDOR_SELECT } from '@/lib/server/vendors';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,8 +36,11 @@ export const GET = handle(async (req, { params }: Ctx) => {
 
 export const PATCH = handle(async (req, { params }: Ctx) => {
   await requireAdmin(req);
-  const fields = cleanVendorInput((await req.json()) as Partial<Vendor>, { admin: true });
+  const input = (await req.json()) as Partial<Vendor> & { vendor_type_name?: string | null };
+  const fields = cleanVendorInput(input, { admin: true });
   if ('business_name' in fields && !fields.business_name) throw new HttpError(400, 'Business name is required');
+  requireContactFields(fields, { partial: true });
+  await applyTypedVendorType(input, fields);
   const vendor = await saveVendor(fields, params.id);
   if (!vendor) throw new HttpError(404, 'Vendor not found');
   return NextResponse.json({ vendor });

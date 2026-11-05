@@ -9,18 +9,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { useVendorTypes } from '@/components/useVendorTypes';
+import VendorTypeSelect from '@/components/VendorTypeSelect';
+import { invalidateVendorTypes } from '@/components/useVendorTypes';
 import { SocialLinksInput } from '@/components/SocialLinks';
 
 export default function ProfilePage() {
   const { ready, me, refresh } = useRequireAuth('user');
   const router = useRouter();
-  const types = useVendorTypes();
   const [form, setForm] = useState({
     business_name: '',
     contact_name: '',
     phone: '',
-    vendor_type_id: '' as string, // select value; '' = not chosen
+    vendor_type_id: null as number | null,
+    vendor_type_name: null as string | null, // typed when "Other" is chosen
     offerings: '',
     address: '',
     website: '',
@@ -39,7 +40,8 @@ export default function ProfilePage() {
         business_name: v.business_name ?? '',
         contact_name: v.contact_name ?? '',
         phone: v.phone ?? '',
-        vendor_type_id: v.vendor_type_id ? String(v.vendor_type_id) : '',
+        vendor_type_id: v.vendor_type_id,
+        vendor_type_name: null,
         offerings: v.offerings ?? '',
         address: v.address ?? '',
         website: v.website ?? '',
@@ -62,11 +64,9 @@ export default function ProfilePage() {
     setError(null);
     setSaved(false);
     try {
-      // Send the type as a number (or null when not chosen).
-      await api('/api/me', {
-        method: 'PUT',
-        body: { ...form, vendor_type_id: form.vendor_type_id ? Number(form.vendor_type_id) : null },
-      });
+      await api('/api/me', { method: 'PUT', body: form });
+      // A typed "Other" type may now exist: refresh the dropdown list.
+      if (form.vendor_type_name) invalidateVendorTypes();
       await refresh();
       const next = new URLSearchParams(window.location.search).get('next');
       if (next && next.startsWith('/') && !next.startsWith('//')) router.replace(next);
@@ -91,20 +91,19 @@ export default function ProfilePage() {
         </div>
         <div>
           <label>Type of vendor</label>
-          <select value={form.vendor_type_id} onChange={set('vendor_type_id')}>
-            <option value="">Choose…</option>
-            {types.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+          <VendorTypeSelect
+            typeId={form.vendor_type_id}
+            typedName={form.vendor_type_name}
+            onChange={(id, name) => setForm((f) => ({ ...f, vendor_type_id: id, vendor_type_name: name }))}
+          />
         </div>
         <div>
           <label>What do you offer?</label>
           <textarea placeholder="e.g. Handmade batik scarves and tote bags" value={form.offerings} onChange={set('offerings')} />
         </div>
         <div>
-          <label>Contact person</label>
-          <input value={form.contact_name} onChange={set('contact_name')} />
+          <label>Contact person *</label>
+          <input required value={form.contact_name} onChange={set('contact_name')} />
         </div>
         <div>
           <label>Phone (WhatsApp) *</label>

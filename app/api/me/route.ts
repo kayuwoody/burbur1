@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireUser } from '@/lib/server/auth';
-import { cleanVendorInput, saveVendor } from '@/lib/server/vendors';
+import { applyTypedVendorType, cleanVendorInput, requireContactFields, saveVendor } from '@/lib/server/vendors';
 import type { MeResponse, Vendor } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -31,13 +31,15 @@ export const GET = handle(async (req) => {
  */
 export const PUT = handle(async (req) => {
   const ctx = await requireUser(req);
-  const input = (await req.json()) as Partial<Vendor>;
+  const input = (await req.json()) as Partial<Vendor> & { vendor_type_name?: string | null };
 
   // Only vendor-editable fields pass through (vendor ID code, notes and
   // active flag are admin-only). Email always comes from the login.
   const fields = { ...cleanVendorInput(input, { admin: false }), email: ctx.email };
   if (!fields.business_name) throw new HttpError(400, 'Business name is required');
-  if (!fields.phone) throw new HttpError(400, 'Phone number is required');
+  requireContactFields(fields);
+  // "Other: type your own" vendor type → find or create it.
+  await applyTypedVendorType(input, fields);
 
   // Already has a profile → plain update.
   if (ctx.vendor) {

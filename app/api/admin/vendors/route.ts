@@ -9,7 +9,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
-import { cleanVendorInput, saveVendor, VENDOR_SELECT } from '@/lib/server/vendors';
+import { applyTypedVendorType, cleanVendorInput, requireContactFields, saveVendor, VENDOR_SELECT } from '@/lib/server/vendors';
 import type { Vendor } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -36,8 +36,11 @@ export const GET = handle(async (req) => {
 
 export const POST = handle(async (req) => {
   await requireAdmin(req);
-  const fields = cleanVendorInput((await req.json()) as Partial<Vendor>, { admin: true });
+  const input = (await req.json()) as Partial<Vendor> & { vendor_type_name?: string | null };
+  const fields = cleanVendorInput(input, { admin: true });
   if (!fields.business_name) throw new HttpError(400, 'Business name is required');
+  requireContactFields(fields);
+  await applyTypedVendorType(input, fields);
   // vendor_code left out → the database assigns the next 'V0001'-style code.
   return NextResponse.json({ vendor: await saveVendor(fields) });
 });

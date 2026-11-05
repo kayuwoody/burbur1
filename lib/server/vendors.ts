@@ -86,3 +86,69 @@ export async function saveVendor(fields: Partial<Vendor>, id?: string): Promise<
   if (error) throw vendorWriteError(error);
   return data as Vendor | null;
 }
+
+/**
+ * Find a vendor type by name, or create it. Used when a vendor (or admin)
+ * picks "Other" and types their own category.
+ *
+ * CONCEPT: match case-insensitively and ignore extra spaces, so "food",
+ * "Food" and " FOOD " all land on the same type instead of three near-
+ * duplicates. New types go to the end of the list. If two people add the
+ * same new type at the same moment, the unique name constraint makes the
+ * second insert fail; we then just look the type up again.
+ */
+export async function resolveVendorType(rawName: string): Promise<number> {
+  const name = rawName.trim().replace(/\s+/g, ' ').slice(0, 40);
+  if (!name) throw new HttpError(400, 'Please type the vendor type');
+
+  const find = async () => {
+    // ilike without wildcards = case-insensitive equality (escape % and _).
+    const { data } = await supabase
+      .from('vendor_types')
+      .select('id')
+      .ilike('name', name.replace(/[\\%_]/g, '\\$&'))
+      .limit(1)
+      .maybeSingle();
+    return (data as { id: number } | null)?.id ?? null;
+  };
+
+  const existing = await find();
+  if (existing) return existing;
+
+  const { data: last } = await supabase.from('vendor_types').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+  const { data, error } = await supabase
+    .from('vendor_types')
+    .insert({ name, sort_order: ((last as { sort_order: number }[] | null)?.[0]?.sort_order ?? 0) + 1 })
+    .select('id')
+    .single();
+  if (error) {
+    const again = error.code === '23505' ? await find() : null;
+    if (again) return again;
+    throw new HttpError(500, error.message);
+  }
+  return (data as { id: number }).id;
+}
+
+/**
+ * Apply the "Other: type your own" choice: if the form sent a typed
+ * vendor_type_name, resolve it to an id and put that on the fields.
+ */
+export async function applyTypedVendorType(
+  input: { vendor_type_name?: string | null },
+  fields: Partial<Vendor>,
+): Promise<void> {
+  if (typeof input.vendor_type_name === 'string' && input.vendor_type_name.trim()) {
+    fields.vendor_type_id = await resolveVendorType(input.vendor_type_name);
+  }
+}
+
+/**
+ * Contact person and phone are mandatory on vendor and admin forms.
+ * `partial` (admin edits): only complain about fields actually sent blank,
+ * so updating one field of an imported vendor with gaps still works.
+ */
+export function requireContactFields(fields: Partial<Vendor>, opts: { partial?: boolean } = {}): void {
+  const missing = (k: 'contact_name' | 'phone') => (opts.partial ? k in fields && !fields[k] : !fields[k]);
+  if (missing('contact_name')) throw new HttpError(400, 'Contact person is required');
+  if (missing('phone')) throw new HttpError(400, 'Phone number is required');
+}

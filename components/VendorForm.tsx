@@ -9,7 +9,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useVendorTypes } from './useVendorTypes';
+import VendorTypeSelect from './VendorTypeSelect';
+import { invalidateVendorTypes } from './useVendorTypes';
 import { SocialLinksInput } from './SocialLinks';
 import type { Vendor } from '@/lib/types';
 
@@ -28,7 +29,10 @@ export type VendorInput = Pick<
   | 'notes'
   | 'whatsapp_opt_in'
   | 'is_active'
->;
+> & {
+  /** Typed vendor type when "Other" is chosen (null otherwise). */
+  vendor_type_name?: string | null;
+};
 
 const EMPTY: VendorInput = {
   vendor_code: '',
@@ -56,7 +60,6 @@ export default function VendorForm({
   /** Should throw on failure; the error message is shown under the form. */
   onSubmit: (v: VendorInput) => Promise<void>;
 }) {
-  const types = useVendorTypes();
   const [v, setV] = useState<VendorInput>({ ...EMPTY, ...initial });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
@@ -84,6 +87,8 @@ export default function VendorForm({
     try {
       await onSubmit(v);
       setMsg({ text: 'Saved.' });
+      // A typed "Other" type may now exist: refresh dropdowns.
+      if (v.vendor_type_name) invalidateVendorTypes();
     } catch (err) {
       setMsg({ text: err instanceof Error ? err.message : 'Could not save', error: true });
     } finally {
@@ -106,12 +111,12 @@ export default function VendorForm({
         <div><label>Business name *</label><input required value={v.business_name} onChange={set('business_name')} /></div>
         <div>
           <label>Vendor type</label>
-          <select value={v.vendor_type_id ?? ''} onChange={set('vendor_type_id')}>
-            <option value="">Not set</option>
-            {types.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+          <VendorTypeSelect
+            typeId={v.vendor_type_id}
+            typedName={v.vendor_type_name ?? null}
+            placeholder="Not set"
+            onChange={(id, name) => setV((p) => ({ ...p, vendor_type_id: id, vendor_type_name: name }))}
+          />
         </div>
       </div>
       <div>
@@ -119,8 +124,8 @@ export default function VendorForm({
         <textarea value={v.offerings ?? ''} onChange={set('offerings')} placeholder="e.g. Handmade batik scarves, tote bags" />
       </div>
       <div className="grid">
-        <div><label>Contact person</label><input value={v.contact_name ?? ''} onChange={set('contact_name')} /></div>
-        <div><label>Phone (WhatsApp)</label><input type="tel" value={v.phone ?? ''} onChange={set('phone')} /></div>
+        <div><label>Contact person *</label><input required value={v.contact_name ?? ''} onChange={set('contact_name')} /></div>
+        <div><label>Phone (WhatsApp) *</label><input required type="tel" value={v.phone ?? ''} onChange={set('phone')} /></div>
         <div><label>Email (links their login)</label><input type="email" value={v.email ?? ''} onChange={set('email')} /></div>
         <div><label>Website</label><input value={v.website ?? ''} onChange={set('website')} placeholder="example.com" /></div>
       </div>
