@@ -27,12 +27,13 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header-inner">
-        {/* Logo + wordmark; the small gold line says which side of the site you're on. */}
+        {/* Public site = the bazaar's brand (Good Vibes Only Market).
+            Admin = the company running it (Maniacs Mansion). */}
         <Link href={inAdmin ? '/admin' : '/'} className="brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/logo-96.png" alt="" />
+          <img src={inAdmin ? '/brand/logo-96.png' : '/brand/gvo-logo-128.png'} alt="" />
           <span>
-            <span className="brand-name">Maniacs Mansion</span>
+            <span className="brand-name">{inAdmin ? 'Maniacs Mansion' : 'Good Vibes Only Market'}</span>
             <span className="brand-sub">{inAdmin ? 'Admin' : 'Stall booking'}</span>
           </span>
         </Link>

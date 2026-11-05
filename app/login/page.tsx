@@ -72,7 +72,7 @@ export default function LoginPage() {
     <div className="narrow" style={{ paddingTop: 16 }}>
       <div className="card stack auth-card">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="auth-logo" src="/brand/logo-256.png" alt="Maniacs Mansion" />
+        <img className="auth-logo" src="/brand/gvo-logo-256.png" alt="Good Vibes Only Market" />
         <h1>{mode === 'signin' ? 'Log in' : mode === 'signup' ? 'Create an account' : 'Reset password'}</h1>
         <form onSubmit={submit} className="stack">
           <div>

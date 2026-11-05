@@ -34,13 +34,19 @@ export default function HomePage() {
       {/* ---------- Hero ---------- */}
       <section className="hero">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-256.png" alt="Maniacs Mansion" />
-        <div className="eyebrow">Maniacs Mansion presents</div>
-        <h1>Book your stall at our next bazaar</h1>
-        <p>Pick an event, choose your spot on the floor plan, and secure it with a quick bank transfer.</p>
+        <img src="/brand/gvo-logo-256.png" alt="Good Vibes Only Market: Weekend Community Bazaar" />
+        <div className="eyebrow">Weekend community bazaar</div>
+        <h1>Come sell with good vibes!</h1>
+        <p>Pick a market date, choose your spot on the floor plan, and secure it with a quick bank transfer.</p>
         <div className="row">
-          <a href="#events" className="btn btn-gold btn-lg">See upcoming events</a>
+          <a href="#events" className="btn btn-primary btn-lg">See upcoming markets</a>
           <Link href="/login" className="btn btn-ghost btn-lg">Vendor log in</Link>
+        </div>
+        <div>
+          <span className="organiser">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo-96.png" alt="" /> Organised by Maniacs Mansion
+          </span>
         </div>
       </section>
 
@@ -48,7 +54,7 @@ export default function HomePage() {
       <div className="steps">
         <div className="step">
           <div className="step-no">1</div>
-          <div><strong>Pick an event</strong><span>Browse upcoming dates and venues below.</span></div>
+          <div><strong>Pick a market</strong><span>Browse upcoming dates and venues below.</span></div>
         </div>
         <div className="step">
           <div className="step-no">2</div>
@@ -62,7 +68,7 @@ export default function HomePage() {
 
       {/* ---------- Events ---------- */}
       <div className="section-title" id="events">
-        <h2>Upcoming events</h2>
+        <h2>Upcoming markets</h2>
       </div>
       {error && <p className="error">{error}</p>}
       {!events && !error && <p className="muted">Loading…</p>}

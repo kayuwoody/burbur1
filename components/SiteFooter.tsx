@@ -1,5 +1,6 @@
 /**
- * components/SiteFooter.tsx — dark footer with logo and contact details,
+ * components/SiteFooter.tsx — footer with the market's badge, the organising
+ * company (Maniacs Mansion) and contact details,
  * shown on vendor-facing pages (hidden in /admin).
  *
  * Contact details come from Admin → Settings via /api/site, so changing the
@@ -36,11 +37,16 @@ export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
+        {/* The bazaar's name first, then the company that organises it. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-96.png" alt="" />
+        <img src="/brand/gvo-logo-128.png" alt="" />
         <div>
-          <strong>{site?.footer_brand ?? 'Maniacs Mansion'}</strong>
-          {site?.company_name ?? 'Maniacs Mansion Trading'}
+          <strong>Good Vibes Only Market</strong>
+          <div className="org">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/logo-96.png" alt="" />
+            <span>Organised by {site?.company_name ?? 'Maniacs Mansion Trading'}</span>
+          </div>
         </div>
         <div className="spacer" />
         <div>
