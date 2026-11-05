@@ -38,19 +38,20 @@ export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
-        {/* The bazaar's name first, then the company that organises it. */}
+        {/* Left: the market's badge and name. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/gvo-logo-128.png" alt="" />
         <div>
           <strong>Good Vibes Only Market</strong>
+        </div>
+        <div className="spacer" />
+        {/* Right: who organises it, then how to reach them. */}
+        <div>
           <div className="org">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/logo-96.png" alt="" />
             <span>Organised by {site?.company_name ?? 'Maniacs Mansion Trading'}</span>
           </div>
-        </div>
-        <div className="spacer" />
-        <div>
           {site?.contact_name && <div>Questions? {site.contact_name}</div>}
           <div className="row" style={{ gap: 12 }}>
             {site?.contact_phone && (wa ? <a href={wa} target="_blank" rel="noreferrer">WhatsApp {site.contact_phone}</a> : <span>{site.contact_phone}</span>)}

@@ -42,12 +42,6 @@ export default function HomePage() {
           <a href="#events" className="btn btn-primary btn-lg">See upcoming markets</a>
           <Link href="/login" className="btn btn-ghost btn-lg">Vendor log in</Link>
         </div>
-        <div>
-          <span className="organiser">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-96.png" alt="" /> Organised by Maniacs Mansion
-          </span>
-        </div>
       </section>
 
       {/* ---------- How it works ---------- */}
