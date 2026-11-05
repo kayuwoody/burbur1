@@ -2,16 +2,23 @@
    globals.css — the whole app's styling. Plain CSS, no framework.
    CONCEPT: colours are tokens on :root so the stall map, buttons and badges
    all share one palette, and changing the brand means editing one block.
+   Brand: Maniacs Mansion. Maroon (same family as the #990000 on invoices),
+   antique gold from the coin logo, warm cream paper background.
+   Fonts come from next/font in app/layout.tsx as CSS variables:
+   --font-display (Zilla Slab, headings) and --font-body (Inter).
    ============================================================================= */
 
 :root {
-  --bg: #f6f5f2;
+  --bg: #f7f2ea;
   --surface: #ffffff;
-  --text: #1c1b19;
-  --muted: #6b6860;
-  --border: #e3e0d8;
-  --brand: #1f4e79;
+  --text: #241b16;
+  --muted: #71655a;
+  --border: #e6dccd;
+  --brand: #8b1414;          /* maroon: buttons, links, accents */
+  --brand-dark: #5a0c0c;     /* hero background, hover */
   --brand-ink: #ffffff;
+  --gold: #b08a4f;           /* antique gold from the logo */
+  --gold-soft: #efe3cb;
   --danger: #b42318;
   --ok: #157f3b;
   --warn: #b26a00;
@@ -19,7 +26,7 @@
   /* Stall map colours */
   --stall-available: #f1dc9c;
   --stall-available-edge: #c9b26a;
-  --stall-selected: #1f4e79;
+  --stall-selected: #8b1414;
   --stall-mine: #157f3b;
   --stall-held: #f0a63a;
   --stall-booked: #c2410c;
@@ -28,38 +35,43 @@
   --block-fill: #cfcdc8;
   --block-text: #ffffff;
 
-  --radius: 10px;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 12px;
+  font-family: var(--font-body, system-ui), -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); overflow-x: clip; }
 a { color: var(--brand); }
-h1 { font-size: 1.5rem; margin: 0 0 0.75rem; }
-h2 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+h1, h2, h3, .display { font-family: var(--font-display, Georgia), Georgia, serif; font-weight: 700; letter-spacing: 0.01em; }
+h1 { font-size: 1.75rem; margin: 0 0 0.75rem; line-height: 1.15; }
+h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
 p { line-height: 1.5; }
 
 /* ---------- Layout shell ---------- */
 .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
 .narrow { max-width: 520px; margin: 0 auto; }
 .header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 2px solid var(--gold-soft);
   position: sticky; top: 0; z-index: 20;
 }
 .header-inner {
   max-width: 1100px; margin: 0 auto; padding: 10px 16px;
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
-.brand { font-weight: 700; text-decoration: none; color: var(--text); margin-right: auto; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); margin-right: auto; }
+.brand img { width: 40px; height: 40px; }
+.brand-name { font-family: var(--font-display), Georgia, serif; font-weight: 700; font-size: 1.15rem; line-height: 1; color: var(--brand-dark); }
+.brand-sub { display: block; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-top: 3px; }
 .nav { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
 .nav a, .nav button {
   text-decoration: none; color: var(--text); padding: 6px 10px; border-radius: 8px;
   font-size: 0.92rem; background: none; border: 0; cursor: pointer; font: inherit;
 }
 .nav a:hover, .nav button:hover { background: var(--bg); }
-.nav a.active { background: var(--bg); font-weight: 600; }
+.nav a.active { background: var(--gold-soft); color: var(--brand-dark); font-weight: 600; }
 .badge-count {
   display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px;
   border-radius: 999px; background: var(--brand); color: var(--brand-ink);
@@ -99,6 +111,9 @@ input[type='checkbox'] { width: auto; }
 .btn:hover { filter: brightness(0.97); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.btn-primary:hover { background: var(--brand-dark); filter: none; }
+.btn-gold { background: var(--gold); color: #fff; border-color: var(--gold); }
+.btn-lg { padding: 12px 20px; font-size: 1rem; border-radius: 10px; }
 .btn-danger { color: var(--danger); border-color: #f1c4bf; }
 .btn-ok { background: var(--ok); color: #fff; border-color: var(--ok); }
 .btn-wa { background: #1f9d55; color: #fff; border-color: #1f9d55; }
@@ -157,3 +172,87 @@ th { font-weight: 600; color: var(--muted); font-size: 0.8rem; text-transform: u
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 12px 16px; box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
 }
+
+/* =============================================================================
+   Public (vendor-facing) sections
+   ============================================================================= */
+
+/* ---------- Hero banner on the home page ---------- */
+.hero {
+  position: relative; overflow: hidden;
+  margin: 0 -16px 28px; padding: 44px 24px 48px;
+  color: #fff; text-align: center;
+  /* Deep maroon with a soft gold glow behind the logo */
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(176, 138, 79, 0.35), transparent 60%),
+    linear-gradient(160deg, var(--brand) 0%, var(--brand-dark) 70%);
+}
+@media (min-width: 760px) { .hero { margin: 0 0 32px; border-radius: 20px; padding: 56px 40px 60px; } }
+.hero img { width: 120px; height: 120px; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35)); }
+.hero .eyebrow { margin: 14px 0 6px; font-size: 0.75rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold-soft); }
+.hero h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); margin: 0 auto 12px; max-width: 18ch; color: #fff; }
+.hero p { margin: 0 auto 22px; max-width: 46ch; color: rgba(255, 255, 255, 0.85); font-size: 1.05rem; }
+.hero .row { justify-content: center; }
+.hero .btn { border-color: transparent; }
+.hero .btn-ghost { background: rgba(255, 255, 255, 0.12); color: #fff; }
+
+/* ---------- "How it works" steps ---------- */
+.steps { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 32px; }
+.step { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.step-no {
+  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--gold-soft); color: var(--brand-dark);
+  font-family: var(--font-display), Georgia, serif; font-weight: 700;
+}
+.step strong { display: block; margin-bottom: 2px; }
+.step span { color: var(--muted); font-size: 0.9rem; }
+
+/* ---------- Section heading with gold rule ---------- */
+.section-title { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+.section-title h2 { margin: 0; }
+.section-title::after { content: ''; flex: 1; height: 2px; background: linear-gradient(90deg, var(--gold-soft), transparent); }
+
+/* ---------- Event "ticket" cards ---------- */
+.ticket {
+  display: flex; text-decoration: none; color: inherit;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.ticket:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(90, 12, 12, 0.12); }
+.ticket-date {
+  flex: none; width: 92px; padding: 14px 8px; text-align: center; color: #fff;
+  background: linear-gradient(180deg, var(--brand), var(--brand-dark));
+  /* Perforated edge, like a tear-off ticket stub */
+  border-right: 2px dashed rgba(255, 255, 255, 0.35);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.ticket-date .mon { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-soft); }
+.ticket-date .day { font-family: var(--font-display), Georgia, serif; font-size: 2.1rem; font-weight: 700; line-height: 1; margin: 4px 0; }
+.ticket-date .to { font-size: 0.75rem; opacity: 0.85; }
+.ticket-body { flex: 1; padding: 14px 16px; min-width: 0; }
+.ticket-body h3 { margin: 0 0 4px; font-size: 1.15rem; }
+.ticket-meta { color: var(--muted); font-size: 0.88rem; }
+.avail { height: 6px; border-radius: 99px; background: var(--gold-soft); overflow: hidden; margin: 12px 0 8px; }
+.avail > i { display: block; height: 100%; background: var(--gold); border-radius: 99px; }
+.ticket-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.88rem; }
+.ticket-price { white-space: nowrap; color: var(--muted); }
+.ticket-price strong { color: var(--brand); font-size: 1rem; }
+.grid-tickets { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+@media (max-width: 380px) { .grid-tickets { grid-template-columns: 1fr; } }
+
+/* ---------- Auth card (login / sign-up) ---------- */
+.auth-logo { display: block; width: 84px; height: 84px; margin: 0 auto 4px; }
+.auth-card h1 { text-align: center; }
+/* Secondary actions under the login form: plain centred text links */
+.auth-links { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.link-btn { background: none; border: 0; padding: 4px; color: var(--brand); font: inherit; font-size: 0.92rem; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; }
+
+/* ---------- Site footer ---------- */
+.site-footer { margin-top: 48px; background: #2a1a14; color: rgba(255, 255, 255, 0.75); font-size: 0.88rem; }
+.site-footer-inner { max-width: 1100px; margin: 0 auto; padding: 28px 16px; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+.site-footer img { width: 48px; height: 48px; }
+.site-footer strong { color: #fff; font-family: var(--font-display), Georgia, serif; font-size: 1.05rem; display: block; }
+.site-footer a { color: var(--gold-soft); }
+.site-footer .spacer { flex: 1; }

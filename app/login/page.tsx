@@ -69,8 +69,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="narrow">
-      <div className="card stack">
+    <div className="narrow" style={{ paddingTop: 16 }}>
+      <div className="card stack auth-card">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="auth-logo" src="/brand/logo-256.png" alt="Maniacs Mansion" />
         <h1>{mode === 'signin' ? 'Log in' : mode === 'signup' ? 'Create an account' : 'Reset password'}</h1>
         <form onSubmit={submit} className="stack">
           <div>
@@ -97,10 +99,10 @@ export default function LoginPage() {
             {busy ? 'Please wait…' : mode === 'signin' ? 'Log in' : mode === 'signup' ? 'Create account' : 'Send reset link'}
           </button>
         </form>
-        <div className="small muted stack">
-          {mode !== 'signin' && <button className="btn btn-sm" onClick={() => setMode('signin')}>I have an account</button>}
-          {mode !== 'signup' && <button className="btn btn-sm" onClick={() => setMode('signup')}>New vendor? Create an account</button>}
-          {mode === 'signin' && <button className="btn btn-sm" onClick={() => setMode('reset')}>Forgot password</button>}
+        <div className="auth-links">
+          {mode !== 'signin' && <button className="link-btn" onClick={() => setMode('signin')}>I already have an account</button>}
+          {mode !== 'signup' && <button className="link-btn" onClick={() => setMode('signup')}>New vendor? Create an account</button>}
+          {mode === 'signin' && <button className="link-btn" onClick={() => setMode('reset')}>Forgot password?</button>}
         </div>
       </div>
     </div>

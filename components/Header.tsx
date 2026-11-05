@@ -26,8 +26,14 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header-inner">
+        {/* Logo + wordmark; the small gold line says which side of the site you're on. */}
         <Link href={inAdmin ? '/admin' : '/'} className="brand">
-          {inAdmin ? 'Stall Booking · Admin' : 'Stall Booking'}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-96.png" alt="" />
+          <span>
+            <span className="brand-name">Maniacs Mansion</span>
+            <span className="brand-sub">{inAdmin ? 'Admin' : 'Stall booking'}</span>
+          </span>
         </Link>
         <nav className="nav">
           {inAdmin ? (
