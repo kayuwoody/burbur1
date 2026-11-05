@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
+import { cleanVendorInput } from '@/lib/server/vendors';
 import type { Settings } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,8 @@ export const PUT = handle(async (req) => {
         contact_name: b.contact_name?.trim() || null,
         contact_phone: b.contact_phone?.trim() || null,
         contact_email: b.contact_email?.trim() || null,
+        // Same clean-up rules as vendor social links (trim, add https://, dedupe).
+        ...(b.social_links !== undefined ? { social_links: cleanVendorInput({ social_links: b.social_links }, { admin: true }).social_links } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq('id', 1)

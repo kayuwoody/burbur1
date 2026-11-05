@@ -73,7 +73,10 @@ export default function HomePage() {
       {error && <p className="error">{error}</p>}
       {!events && !error && <p className="muted">Loading…</p>}
       {events?.length === 0 && (
-        <div className="card muted">No events are open for booking right now. Check back soon, or follow us for announcements!</div>
+        <div className="card muted">
+          No markets are open for booking right now. Check back soon, or{' '}
+          <a href="https://www.facebook.com/profile.php?id=61592121695936" target="_blank" rel="noreferrer">follow us on Facebook</a> for announcements!
+        </div>
       )}
       <div className="grid-tickets">
         {events?.map((e) => {

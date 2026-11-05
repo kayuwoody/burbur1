@@ -18,6 +18,7 @@ Online stall booking for events. Vendors log in, pick an event date, click stall
    - `supabase/migrations/005_vendor_details.sql`: vendor ID codes, vendor types, offerings, address, website
    - `supabase/migrations/006_social_links.sql`: any number of social media links per vendor
    - `supabase/migrations/007_documents.sql`: invoices & receipts (company details pre-filled)
+   - `supabase/migrations/008_site_social_links.sql`: the market's social media links for the website footer
 3. **Authentication → Providers → Email**: keep it enabled. Leave **Confirm email** ON, because it prevents someone from claiming a vendor record with an email they don't own.
 4. **Authentication → URL Configuration**: set **Site URL** to your Vercel URL and add `https://<your-app>.vercel.app/**` to Redirect URLs.
 

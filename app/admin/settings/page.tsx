@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
 import VendorTypesManager from '@/components/VendorTypesManager';
+import { SocialLinksInput } from '@/components/SocialLinks';
 import type { Settings } from '@/lib/types';
 
 export default function AdminSettingsPage() {
@@ -54,6 +55,10 @@ export default function AdminSettingsPage() {
         <div className="row">
           <div style={{ flex: 1 }}><label>Contact phone</label><input value={s.contact_phone ?? ''} onChange={set('contact_phone')} /></div>
           <div style={{ flex: 1 }}><label>Contact email</label><input value={s.contact_email ?? ''} onChange={set('contact_email')} /></div>
+        </div>
+        <div>
+          <label>Our social media (shown as “Follow us” on the website)</label>
+          <SocialLinksInput value={s.social_links ?? []} onChange={(links) => setS((p) => (p ? { ...p, social_links: links } : p))} />
         </div>
         <strong>Bank transfer details (also printed on invoices)</strong>
         <div><label>Bank</label><input value={s.bank_name ?? ''} onChange={set('bank_name')} /></div>

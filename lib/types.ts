@@ -192,6 +192,8 @@ export interface Settings {
   contact_name?: string | null;
   contact_phone?: string | null;
   contact_email?: string | null;
+  /** The market's own social media pages (footer "Follow us"). */
+  social_links?: string[];
 }
 
 /** One cart line, kept in localStorage until checkout. */

@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
-import { waLink } from '@/lib/util';
+import { normalizeUrl, socialPlatform, waLink } from '@/lib/util';
 
 type Site = {
   company_name: string | null;
@@ -19,6 +19,7 @@ type Site = {
   contact_name: string | null;
   contact_phone: string | null;
   contact_email: string | null;
+  social_links: string[] | null;
 };
 
 export default function SiteFooter() {
@@ -55,6 +56,15 @@ export default function SiteFooter() {
             {site?.contact_phone && (wa ? <a href={wa} target="_blank" rel="noreferrer">WhatsApp {site.contact_phone}</a> : <span>{site.contact_phone}</span>)}
             {site?.contact_email && <a href={`mailto:${site.contact_email}`}>{site.contact_email}</a>}
           </div>
+          {/* "Follow us" links, platform named from each URL (Facebook, Instagram…) */}
+          {!!site?.social_links?.length && (
+            <div className="row" style={{ gap: 12, marginTop: 4 }}>
+              <span>Follow us:</span>
+              {site.social_links.map((l) => (
+                <a key={l} href={normalizeUrl(l)} target="_blank" rel="noreferrer">{socialPlatform(l).name}</a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </footer>
