@@ -1,8 +1,9 @@
 /**
  * components/Header.tsx — top navigation.
  *
- * Shows vendor links (Events, Cart, My bookings) to everyone, admin links
- * only to admins, and Log in / Log out depending on session.
+ * Shows vendor links (Events, Cart, My bookings) on the public site and
+ * admin links inside /admin. There is deliberately no link from the public
+ * site to /admin; admins go there directly by URL.
  */
 'use client';
 
@@ -53,7 +54,6 @@ export default function Header() {
               </Link>
               {session && <Link href="/bookings" className={cls('/bookings')}>My bookings</Link>}
               {session && <Link href="/profile" className={cls('/profile')}>Profile</Link>}
-              {me?.isAdmin && <Link href="/admin">Admin</Link>}
             </>
           )}
           {session ? (
