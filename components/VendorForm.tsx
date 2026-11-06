@@ -114,7 +114,6 @@ export default function VendorForm({
           <VendorTypeSelect
             typeId={v.vendor_type_id}
             typedName={v.vendor_type_name ?? null}
-            placeholder="Not set"
             onChange={(id, name) => setV((p) => ({ ...p, vendor_type_id: id, vendor_type_name: name }))}
           />
         </div>

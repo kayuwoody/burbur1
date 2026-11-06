@@ -272,3 +272,17 @@ th { font-weight: 600; color: var(--muted); font-size: 0.8rem; text-transform: u
 .site-footer .org img { width: 36px; height: 36px; }
 .site-footer a { color: var(--sun); }
 .site-footer .spacer { flex: 1; }
+
+/* ---------- Type-to-search box (vendor type) ---------- */
+.combo { position: relative; }
+.combo-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 30;
+  list-style: none; margin: 0; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  max-height: 240px; overflow-y: auto;
+}
+.combo-opt { padding: 9px 10px; border-radius: 6px; cursor: pointer; }
+.combo-opt.active, .combo-opt:hover { background: var(--teal-soft); }
+.combo-new { padding: 9px 10px; border-radius: 6px; cursor: pointer; color: var(--accent); font-weight: 700; border-top: 1px dashed var(--border); }
+.combo-new:hover { background: var(--sun-soft); }
