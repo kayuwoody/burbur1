@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { formatDateRange, formatDateTime, rm } from '@/lib/util';
+import { formatDateRange, formatDateTime, rm, waLink } from '@/lib/util';
 import StallMap, { Legend, type StallLook } from '@/components/StallMap';
 import type { EventDetail, EventStatus, MapStall, Vendor } from '@/lib/types';
 
@@ -27,6 +27,8 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  // Vendors who just changed booth (after a swap), for the WhatsApp heads-up.
+  const [moved, setMoved] = useState<{ id: string; business_name: string; contact_name: string | null; phone: string | null; from: string; to: string }[]>([]);
   const [busy, setBusy] = useState(false);
 
   // Side-panel form state
@@ -97,6 +99,32 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
     [`Stall ${s.stall_no}`, s.status, rm(s.price), `${s.power_watts} W`, s.vendor_name].filter(Boolean).join(' · ');
 
   /** Send a bulk edit for the current selection, then reload the map. */
+  /**
+   * Swap the two selected stalls' occupants (or move a vendor into an empty
+   * stall). Confirms first, spelling out who goes where.
+   */
+  async function swapSelected() {
+    const [a, b] = selStalls;
+    const who = (s: MapStall) => s.vendor_name ?? (s.status === 'blocked' ? 'greyed-out space' : 'empty');
+    if (!confirm(`Swap stall ${a.stall_no} (${who(a)}) with stall ${b.stall_no} (${who(b)})?\n\nVendors, bookings, invoices and receipts move with them; each stall keeps its own price and power allocation.`)) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await api<{ detail: EventDetail; moved: typeof moved }>(`/api/admin/events/${params.id}/swap`, {
+        method: 'POST',
+        body: { a: a.stall_no, b: b.stall_no },
+      });
+      setDetail(r.detail);
+      setMoved(r.moved);
+      setSelected(new Set());
+      setMsg({ text: `Swapped stalls ${a.stall_no} and ${b.stall_no}.` });
+    } catch (e) {
+      setMsg({ text: e instanceof Error ? e.message : 'Swap failed', error: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function applyStalls(body: Record<string, unknown>) {
     setBusy(true);
     setMsg(null);
@@ -201,6 +229,27 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
         <aside className="stack">
           {msg && <p className={`card small ${msg.error ? 'error' : 'success'}`}>{msg.text}</p>}
 
+          {moved.length > 0 && (
+            <div className="card stack">
+              <div className="spread">
+                <strong className="small">Let them know</strong>
+                <button className="btn btn-sm" onClick={() => setMoved([])}>Dismiss</button>
+              </div>
+              {moved.map((m) => {
+                const wa = waLink(
+                  m.phone,
+                  `Hi ${m.contact_name || m.business_name}, a quick update for ${event.name}: your booth has changed from ${m.from} to ${m.to}. See you there!`,
+                );
+                return (
+                  <div key={m.id + m.to} className="spread small">
+                    <span>{m.business_name}: {m.from} → <strong>{m.to}</strong></span>
+                    {wa ? <a className="btn btn-sm btn-wa" href={wa} target="_blank" rel="noreferrer">WhatsApp</a> : <span className="muted">no phone</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {selected.size > 0 ? (
             // ---------- Selection panel ----------
             <div className="card stack">
@@ -211,6 +260,16 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
               <div className="small muted">{selStalls.map((s) => s.stall_no).join(', ')}</div>
 
               {selStalls.length === 1 && <SingleStallInfo stall={selStalls[0]} />}
+
+              {/* Exactly two stalls selected → swap / move */}
+              {selStalls.length === 2 && (selStalls[0].vendor_id || selStalls[1].vendor_id) && (
+                <button className="btn btn-primary" disabled={busy} onClick={swapSelected}>
+                  ⇄ Swap stalls {selStalls[0].stall_no} and {selStalls[1].stall_no}
+                </button>
+              )}
+              {selStalls.length === 1 && selStalls[0].vendor_id && (
+                <p className="small muted" style={{ margin: 0 }}>To move this vendor, also select the stall they should go to, then Swap.</p>
+              )}
 
               <div className="row" style={{ alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>

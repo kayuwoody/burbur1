@@ -44,6 +44,7 @@ NEXT_PUBLIC_SITE_URL
 - `expire_stale_holds()`: lazy expiry, called at the top of availability reads/writes
 - `create_booking(vendor_id, items jsonb)`: row-locks, re-checks, holds all-or-nothing; raises `STALL_UNAVAILABLE:<event>/<stall>,…`
 - `admin_booking_action(booking_id, 'confirm'|'cancel', note)`
+- `swap_stalls(event_id, a, b)` (`011_swap_stalls.sql`): swaps occupancy (vendor, booking, status, hold) of two stalls; price/power stay with the place; updates booking_items stall_no and live documents' "(Booth X)" text. Admin map: select exactly 2 stalls → Swap; `/api/admin/events/[id]/swap` returns `moved` for WhatsApp heads-up.
 
 ## Conventions
 - Malaysia time for "today": `todayMYT()` in `lib/util.ts`.
