@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { BOOKING_STATUS_LABEL, documentUrl, formatDateRange, rm, todayMYT, waLink } from '@/lib/util';
+import { BOOKING_STATUS_LABEL, documentUrl, formatDateRange, rm, siteOrigin, todayMYT, waLink } from '@/lib/util';
 import type { DocGroupRow, DocumentRow, DocumentSummary, EventRow } from '@/lib/types';
 
 type Payload = { event: EventRow; groups: DocGroupRow[]; voided: DocumentSummary[]; errors?: string[] };
@@ -73,7 +73,7 @@ export default function EventDocumentsPage({ params }: { params: { id: string } 
   const scope = selected.size ? groups.filter((g) => selected.has(g.key)) : groups;
   const needInvoice = scope.filter((g) => !g.invoice);
   const needReceipt = scope.filter((g) => !g.receipt && g.can_receipt);
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  const origin = siteOrigin(); // tidied NEXT_PUBLIC_SITE_URL (see lib/util.ts)
 
   /** WhatsApp text with the most relevant document (receipt if issued, else invoice). */
   const waMessage = (g: DocGroupRow) => {

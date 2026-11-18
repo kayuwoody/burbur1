@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { formatDateRange, formatDateTime, setupUrl, waLink } from '@/lib/util';
+import { formatDateRange, formatDateTime, setupUrl, siteOrigin, waLink } from '@/lib/util';
 import type { Vendor } from '@/lib/types';
 
 type Row = {
@@ -52,7 +52,7 @@ export default function EventSetupPage({ params }: { params: { id: string } }) {
 
   if (!ready || !data) return <p className={error ? 'error' : 'muted'}>{error ?? 'Loading…'}</p>;
   const { event, vendors } = data;
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  const origin = siteOrigin(); // tidied NEXT_PUBLIC_SITE_URL (see lib/util.ts)
   const done = vendors.filter((v) => v.submitted_at).length;
 
   /** The WhatsApp message with the vendor's personal form link. */

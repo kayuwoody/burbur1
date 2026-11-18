@@ -229,6 +229,20 @@ export function defaultDocPrefix(name: string, eventId: string): string {
   return `${initials || 'EV'}${eventId}`;
 }
 
+/**
+ * The site's public address for links sent outside the app (WhatsApp).
+ * CONCEPT: NEXT_PUBLIC_SITE_URL is typed by hand in Vercel, so tidy it:
+ * trim stray spaces/line breaks, add https:// if missing, drop a trailing
+ * slash. A link with a space in it, or without a scheme, is not made
+ * clickable by WhatsApp. Falls back to the address the admin is using.
+ *   ' www.goodvibes-bazaar.com.my/ '  →  'https://www.goodvibes-bazaar.com.my'
+ */
+export function siteOrigin(): string {
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim().replace(/\/+$/, '');
+  if (raw) return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  return typeof window !== 'undefined' ? window.location.origin : '';
+}
+
 /** Public link to a vendor's setup form (works without login; token is unguessable). */
 export function setupUrl(token: string, origin = ''): string {
   return `${origin}/setup/${token}`;

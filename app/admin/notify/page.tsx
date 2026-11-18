@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { useVendorTypes } from '@/components/useVendorTypes';
 import { api } from '@/lib/api';
-import { fillTemplate, formatDateRange, formatDateTime, waLink } from '@/lib/util';
+import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, waLink } from '@/lib/util';
 import type { EventSummary } from '@/lib/types';
 
 type Row = {
@@ -63,7 +63,7 @@ export default function AdminNotifyPage() {
   }, [load]);
 
   const event = events.find((e) => e.id === eventId);
-  const site = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const site = siteOrigin(); // tidied NEXT_PUBLIC_SITE_URL (see lib/util.ts)
 
   /** Personalise the template for one vendor. */
   const messageFor = (r: Row) =>
