@@ -229,6 +229,11 @@ export function defaultDocPrefix(name: string, eventId: string): string {
   return `${initials || 'EV'}${eventId}`;
 }
 
+/** Public link to a vendor's setup form (works without login; token is unguessable). */
+export function setupUrl(token: string, origin = ''): string {
+  return `${origin}/setup/${token}`;
+}
+
 /** Public link to an invoice/receipt PDF (works without login; token is unguessable). */
 export function documentUrl(token: string, origin = ''): string {
   return `${origin}/api/documents/${token}`;

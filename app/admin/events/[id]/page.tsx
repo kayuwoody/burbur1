@@ -172,6 +172,7 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
         </div>
         <div className="row">
           <Link href={`/admin/events/${event.id}/documents`} className="btn btn-sm">Invoices &amp; receipts</Link>
+          <Link href={`/admin/events/${event.id}/setup`} className="btn btn-sm">Setup details</Link>
           <Link href={`/admin/notify?event=${event.id}`} className="btn btn-sm">Notify vendors</Link>
           <Link href="/admin/events" className="btn btn-sm">← Events</Link>
         </div>

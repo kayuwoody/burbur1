@@ -8,6 +8,7 @@ import { handle, HttpError, must, requireUser } from '@/lib/server/auth';
 import { expireStaleHolds } from '@/lib/server/events';
 import { loadBookings } from '@/lib/server/bookings';
 import { bookingNeedsDocuments, syncBookingDocuments } from '@/lib/server/documents';
+import { attachSetupLinks } from '@/lib/server/setup';
 import type { Settings } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -33,5 +34,6 @@ export const GET = handle(async (req, { params }: { params: { id: string } }) =>
     [booking] = await loadBookings({ id: params.id });
   }
 
+  await attachSetupLinks([booking]);
   return NextResponse.json({ booking, payment: settings });
 });

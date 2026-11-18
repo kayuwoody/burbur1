@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { BOOKING_STATUS_LABEL, documentUrl, formatDateRange, formatDateTime, rm, waLink } from '@/lib/util';
+import { BOOKING_STATUS_LABEL, documentUrl, formatDateRange, formatDateTime, rm, setupUrl, waLink } from '@/lib/util';
 import BookingItems from '@/components/BookingItems';
 import DocumentLinks from '@/components/DocumentLinks';
 import type { Booking, BookingStatus } from '@/lib/types';
@@ -35,7 +35,19 @@ function vendorMessage(b: Booking): string {
       .join('\n');
   if (b.status === 'confirmed') {
     const receipts = links('receipt');
-    return `Hi ${name}, your stall booking #${b.ref} is confirmed!\n${lines.join('\n')}${receipts ? `\n\nReceipt:\n${receipts}` : ''}\nThank you, see you there!`;
+    // Setup form (crew for work passes + power needs), one link per event.
+    const forms = (b.setup ?? [])
+      .map((s) => {
+        const ev = b.items.find((i) => i.event_id === s.event_id)?.event;
+        return `${ev?.name ?? s.event_id}: ${setupUrl(s.access_token, origin)}`;
+      })
+      .join('\n');
+    return (
+      `Hi ${name}, your stall booking #${b.ref} is confirmed!\n${lines.join('\n')}` +
+      (receipts ? `\n\nReceipt:\n${receipts}` : '') +
+      (forms ? `\n\nPlease fill in your setup details (crew names & IC for the venue's work passes, and power needs):\n${forms}` : '') +
+      `\nThank you, see you there!`
+    );
   }
   if (b.status === 'pending_payment') {
     const invoices = links('invoice');

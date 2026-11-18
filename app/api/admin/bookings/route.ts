@@ -9,6 +9,7 @@ import { handle, must, requireAdmin } from '@/lib/server/auth';
 import { expireStaleHolds } from '@/lib/server/events';
 import { loadBookings } from '@/lib/server/bookings';
 import { bookingNeedsDocuments, syncBookingDocuments } from '@/lib/server/documents';
+import { attachSetupLinks } from '@/lib/server/setup';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,5 +35,7 @@ export const GET = handle(async (req) => {
   const counts: Record<string, number> = {};
   (all as { status: string }[]).forEach((b) => (counts[b.status] = (counts[b.status] ?? 0) + 1));
 
+  // Setup-form links for confirmed bookings (used in the WhatsApp message).
+  await attachSetupLinks(bookings);
   return NextResponse.json({ bookings, counts });
 });

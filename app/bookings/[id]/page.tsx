@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { api } from '@/lib/api';
-import { BOOKING_STATUS_LABEL, formatDateTime, rm } from '@/lib/util';
+import { BOOKING_STATUS_LABEL, formatDateTime, rm, setupUrl } from '@/lib/util';
 import BookingItems from '@/components/BookingItems';
 import DocumentLinks from '@/components/DocumentLinks';
 import type { Booking, Settings } from '@/lib/types';
@@ -124,6 +124,24 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
           <p className="small muted" style={{ margin: 0 }}>
             {b.status === 'confirmed' ? 'Your official receipt is ready.' : 'Your receipt will appear here once we confirm your payment.'}
           </p>
+        </div>
+      )}
+
+      {/* Setup form: crew for work passes + power needs, per event */}
+      {!!b.setup?.length && (
+        <div className="card stack">
+          <strong>Setup details</strong>
+          <p className="small muted" style={{ margin: 0 }}>
+            Please tell us who will set up your stall (for the venue’s work passes) and any appliances that need power.
+          </p>
+          <div className="row">
+            {b.setup.map((s) => (
+              <Link key={s.event_id} href={setupUrl(s.access_token)} className={`btn btn-sm ${s.submitted_at ? '' : 'btn-primary'}`}>
+                {s.submitted_at ? '✓ ' : ''}
+                {b.items.find((i) => i.event_id === s.event_id)?.event?.name ?? s.event_id}: {s.submitted_at ? 'view / edit' : 'fill in'}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 

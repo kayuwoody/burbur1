@@ -148,6 +148,15 @@ export interface Booking {
   vendor?: Pick<Vendor, 'id' | 'business_name' | 'contact_name' | 'phone' | 'email'> | null;
   /** Invoices/receipts issued for this booking (including voided ones). */
   docs?: DocumentSummary[];
+  /** Setup-form links (work-pass crew + power), confirmed bookings only. */
+  setup?: SetupLink[];
+}
+
+/** Link to a vendor's setup form for one event (/setup/<access_token>). */
+export interface SetupLink {
+  event_id: string;
+  access_token: string;
+  submitted_at: string | null;
 }
 
 /** One line on an invoice/receipt. */
