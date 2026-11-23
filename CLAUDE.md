@@ -25,7 +25,7 @@ NEXT_PUBLIC_SITE_URL
 - Performance: every DB call is a network round trip. Group independent calls with `Promise.all` (e.g. auth check ‖ `expireStaleHolds()` ‖ reads that don't depend on expiry). Mutations should return the refreshed data rather than forcing a second fetch.
 
 ## Data model (supabase/migrations/001_init.sql)
-- `layouts` (+ `blocks` jsonb for grey shapes) / `layout_stalls` (x,y,w,h): master floor plan
+- `layouts` (+ `blocks` jsonb for grey shapes) / `layout_stalls` (x,y,w,h): master floor plan (`main` = original 34 booths; `main2` = 39 booths incl. 35–39, default for new events, `012_layout_v2.sql`)
 - `events`: id = `YYMMDD` of `start_date`; `end_date` (≥ start, may cross months); status `draft|open|closed`. Bookable until `end_date` passes (MYT). Columns renamed in `004_event_date_range.sql`; later migrations are append-only.
 - `event_stalls`: (event_id, stall_no) → vendor_id, price, power_watts, status `available|held|booked|blocked`, booking_id, hold_expires_at (blocked stalls are left out of the vendor map response entirely, see `loadEventDetail`)
 - `bookings` (status `pending_payment|payment_submitted|confirmed|cancelled|expired`, `ref` short code) + `booking_items` (price snapshot)

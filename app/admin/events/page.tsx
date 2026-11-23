@@ -23,7 +23,7 @@ export default function AdminEventsPage() {
     start_date: '',
     end_date: '',
     name: '',
-    layout_id: 'main',
+    layout_id: 'main2', // newest floor plan (012_layout_v2.sql); older ones stay selectable
     venue: '',
     default_price: '',
     default_power_watts: '',

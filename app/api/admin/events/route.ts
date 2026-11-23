@@ -54,7 +54,8 @@ export const POST = handle(async (req) => {
   if (endDate < startDate) throw new HttpError(400, 'End date must be on or after the start date');
   const name = body.name?.trim();
   if (!name) throw new HttpError(400, 'Event name is required');
-  const layoutId = body.layout_id || 'main';
+  // Default floor plan for new events: the latest layout (012_layout_v2.sql).
+  const layoutId = body.layout_id || 'main2';
   const price = Number(body.default_price ?? 0);
   const power = Math.round(Number(body.default_power_watts ?? 0));
   if (!(price >= 0) || !(power >= 0)) throw new HttpError(400, 'Price and power must be zero or more');
