@@ -95,8 +95,12 @@ export async function loadEventDetail(
   const byNo = new Map((rows as unknown as Row[]).map((r) => [r.stall_no, r]));
 
   // Merge: only stalls present in BOTH the layout and this event are drawn.
+  // Vendors never see stalls we aren't renting out for this event (blocked):
+  // they are left out of the response entirely, not just greyed out, so the
+  // map shows only what is on offer. Admins see everything.
   const stalls: MapStall[] = (geometry as { stall_no: string; x: number; y: number; w: number; h: number }[])
     .filter((g) => byNo.has(g.stall_no))
+    .filter((g) => viewer === 'admin' || byNo.get(g.stall_no)!.status !== 'blocked')
     .map((g) => {
       const r = byNo.get(g.stall_no)!;
       const base: MapStall = {

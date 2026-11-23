@@ -52,10 +52,12 @@ export default function EventPage({ params }: { params: { id: string } }) {
   const cartHere = stalls.filter((s) => inCart.has(s.stall_no));
   const cartTotal = cart.reduce((sum, c) => sum + c.price, 0);
 
-  /** Colour each stall from the vendor's point of view. */
+  /**
+   * Colour each stall from the vendor's point of view. Blocked (not offered)
+   * stalls never reach this page: the server leaves them out.
+   */
   const look = (s: MapStall): StallLook => {
     if (s.mine) return { fill: 'var(--stall-mine)', text: '#fff', disabled: true };
-    if (s.status === 'blocked') return { fill: 'var(--stall-blocked)', text: '#a8a49b', disabled: true, hatched: true };
     if (s.status !== 'available') return { fill: 'var(--stall-taken)', text: '#8a867d', disabled: true };
     if (inCart.has(s.stall_no)) return { fill: 'var(--stall-selected)', text: '#fff' };
     return { fill: 'var(--stall-available)', text: '#5c4d1d', disabled: !bookable };
@@ -101,7 +103,6 @@ export default function EventPage({ params }: { params: { id: string } }) {
               { label: t('legend.inCart'), color: 'var(--stall-selected)' },
               { label: t('legend.yours'), color: 'var(--stall-mine)' },
               { label: t('legend.taken'), color: 'var(--stall-taken)' },
-              { label: t('legend.notOffered'), color: 'var(--stall-blocked)', hatched: true },
             ]}
           />
         </div>
