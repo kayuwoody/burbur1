@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
 import { normalizeUrl, socialPlatform, waLink } from '@/lib/util';
+import { useT } from '@/components/LanguageProvider';
 
 type Site = {
   company_name: string | null;
@@ -25,6 +26,7 @@ type Site = {
 export default function SiteFooter() {
   const pathname = usePathname();
   const [site, setSite] = useState<Site | null>(null);
+  const { t } = useT();
 
   useEffect(() => {
     api<{ site: Site }>('/api/site')
@@ -33,7 +35,7 @@ export default function SiteFooter() {
   }, []);
 
   if (pathname.startsWith('/admin')) return null;
-  const wa = waLink(site?.contact_phone, 'Hi! I have a question about booking a stall.');
+  const wa = waLink(site?.contact_phone, t('footer.waText'));
 
   return (
     <footer className="site-footer">
@@ -50,17 +52,17 @@ export default function SiteFooter() {
           <div className="org">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/brand/logo-96.png" alt="" />
-            <span>Organised by {site?.company_name ?? 'Maniacs Mansion Trading'}</span>
+            <span>{t('footer.organised', { company: site?.company_name ?? 'Maniacs Mansion Trading' })}</span>
           </div>
-          {site?.contact_name && <div>Questions? {site.contact_name}</div>}
+          {site?.contact_name && <div>{t('footer.questions', { name: site.contact_name })}</div>}
           <div className="row" style={{ gap: 12 }}>
-            {site?.contact_phone && (wa ? <a href={wa} target="_blank" rel="noreferrer">WhatsApp {site.contact_phone}</a> : <span>{site.contact_phone}</span>)}
+            {site?.contact_phone && (wa ? <a href={wa} target="_blank" rel="noreferrer">{t('footer.whatsapp', { phone: site.contact_phone })}</a> : <span>{site.contact_phone}</span>)}
             {site?.contact_email && <a href={`mailto:${site.contact_email}`}>{site.contact_email}</a>}
           </div>
           {/* "Follow us" links, platform named from each URL (Facebook, Instagram…) */}
           {!!site?.social_links?.length && (
             <div className="row" style={{ gap: 12, marginTop: 4 }}>
-              <span>Follow us:</span>
+              <span>{t('footer.follow')}</span>
               {site.social_links.map((l) => (
                 <a key={l} href={normalizeUrl(l)} target="_blank" rel="noreferrer">{socialPlatform(l).name}</a>
               ))}

@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import VendorTypeSelect from '@/components/VendorTypeSelect';
 import { invalidateVendorTypes } from '@/components/useVendorTypes';
 import { SocialLinksInput } from '@/components/SocialLinks';
+import { useT } from '@/components/LanguageProvider';
 
 export default function ProfilePage() {
   const { ready, me, refresh } = useRequireAuth('user');
@@ -31,6 +32,7 @@ export default function ProfilePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const { t } = useT();
 
   // Pre-fill from the existing profile once auth has loaded.
   useEffect(() => {
@@ -72,25 +74,25 @@ export default function ProfilePage() {
       if (next && next.startsWith('/') && !next.startsWith('//')) router.replace(next);
       else setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save');
+      setError(err instanceof Error ? err.message : t('common.couldNotSave'));
     } finally {
       setBusy(false);
     }
   }
 
-  if (!ready) return <p className="muted">Loading…</p>;
+  if (!ready) return <p className="muted">{t('common.loading')}</p>;
 
   return (
     <div className="narrow card stack">
-      <h1>{me?.vendor ? 'Your profile' : 'Tell us about your business'}</h1>
-      <p className="muted small">Logged in as {me?.user.email}</p>
+      <h1>{t(me?.vendor ? 'profile.edit' : 'profile.new')}</h1>
+      <p className="muted small">{t('profile.loggedInAs', { email: me?.user.email ?? '' })}</p>
       <form onSubmit={submit} className="stack">
         <div>
-          <label>Business / stall name *</label>
+          <label>{t('profile.business')}</label>
           <input required value={form.business_name} onChange={set('business_name')} />
         </div>
         <div>
-          <label>Type of vendor</label>
+          <label>{t('profile.type')}</label>
           <VendorTypeSelect
             typeId={form.vendor_type_id}
             typedName={form.vendor_type_name}
@@ -98,36 +100,36 @@ export default function ProfilePage() {
           />
         </div>
         <div>
-          <label>What do you offer?</label>
-          <textarea placeholder="e.g. Handmade batik scarves and tote bags" value={form.offerings} onChange={set('offerings')} />
+          <label>{t('profile.offer')}</label>
+          <textarea placeholder={t('profile.offerPh')} value={form.offerings} onChange={set('offerings')} />
         </div>
         <div>
-          <label>Contact person *</label>
+          <label>{t('profile.contact')}</label>
           <input required value={form.contact_name} onChange={set('contact_name')} />
         </div>
         <div>
-          <label>Phone (WhatsApp) *</label>
+          <label>{t('profile.phone')}</label>
           <input required type="tel" placeholder="012-345 6789" value={form.phone} onChange={set('phone')} />
         </div>
         <div>
-          <label>Address</label>
+          <label>{t('profile.address')}</label>
           <textarea style={{ minHeight: 60 }} value={form.address} onChange={set('address')} />
         </div>
         <div>
-          <label>Website</label>
+          <label>{t('profile.website')}</label>
           <input placeholder="example.com" value={form.website} onChange={set('website')} />
         </div>
         <div>
-          <label>Social media: add as many as you have</label>
+          <label>{t('profile.social')}</label>
           <SocialLinksInput value={form.social_links} onChange={(links) => setForm((f) => ({ ...f, social_links: links }))} />
         </div>
         <label className="check">
           <input type="checkbox" checked={form.whatsapp_opt_in} onChange={set('whatsapp_opt_in')} />
-          Message me on WhatsApp when new events open
+          {t('profile.optin')}
         </label>
         {error && <p className="error small">{error}</p>}
-        {saved && <p className="success small">Saved.</p>}
-        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
+        {saved && <p className="success small">{t('common.saved')}</p>}
+        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? t('common.saving') : t('common.save')}</button>
       </form>
     </div>
   );

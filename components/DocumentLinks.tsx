@@ -4,11 +4,16 @@
  * CONCEPT: each document has a secret link (/api/documents/<token>), so a
  * plain <a> works for vendors and admins alike, and the same link can be
  * pasted into WhatsApp. Voided documents are hidden unless `showVoid`.
+ * Button labels follow the visitor's language; the PDFs themselves stay English.
  */
+'use client';
+
 import { documentUrl } from '@/lib/util';
 import type { DocumentSummary } from '@/lib/types';
+import { useT } from '@/components/LanguageProvider';
 
 export default function DocumentLinks({ docs, showVoid = false }: { docs?: DocumentSummary[] | null; showVoid?: boolean }) {
+  const { t } = useT();
   const list = (docs ?? [])
     .filter((d) => showVoid || !d.voided_at)
     // Invoices before receipts, then by number.
@@ -25,7 +30,7 @@ export default function DocumentLinks({ docs, showVoid = false }: { docs?: Docum
           rel="noreferrer"
           style={d.voided_at ? { textDecoration: 'line-through', opacity: 0.6 } : undefined}
         >
-          📄 {d.kind === 'invoice' ? 'Invoice' : 'Receipt'} {d.number}
+          📄 {t(d.kind === 'invoice' ? 'doc.invoice' : 'doc.receipt')} {d.number}
         </a>
       ))}
     </div>

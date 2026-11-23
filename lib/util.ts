@@ -21,9 +21,9 @@ export function eventIdFromDate(isoDate: string): string {
 }
 
 /** Format a YYYY-MM-DD date for display, e.g. 'Sun, 15 Nov 2026'. */
-export function formatDate(isoDate: string): string {
+export function formatDate(isoDate: string, locale = 'en-MY'): string {
   // Noon UTC avoids the date shifting when rendered in another timezone.
-  return new Date(`${isoDate}T12:00:00Z`).toLocaleDateString('en-MY', {
+  return new Date(`${isoDate}T12:00:00Z`).toLocaleDateString(locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -35,17 +35,26 @@ export function formatDate(isoDate: string): string {
 /**
  * Format an event's date span for display.
  * CONCEPT: show only as much as needed so ranges stay short:
+ * `locale` follows the vendor's chosen language (default English).
  *   same day        → 'Sun, 15 Nov 2026'
  *   same month      → '13 – 15 Nov 2026'
  *   across months   → '28 Nov – 6 Dec 2026'
  *   across years    → '30 Dec 2026 – 2 Jan 2027'
  */
-export function formatDateRange(start: string, end: string): string {
-  if (!end || start === end) return formatDate(start);
+export function formatDateRange(start: string, end: string, locale = 'en-MY'): string {
+  if (!end || start === end) return formatDate(start, locale);
+  const [sy, sm, sd] = start.split('-');
+  const [ey, em, ed] = end.split('-');
+  // Chinese writes year→month→day, so build it directly:
+  //   2026年11月13日 – 26日 · 2026年11月28日 – 12月6日 · 2026年12月30日 – 2027年1月2日
+  if (locale.startsWith('zh')) {
+    const full = (y: string, m: string, d: string) => `${+y}年${+m}月${+d}日`;
+    if (sy !== ey) return `${full(sy, sm, sd)} – ${full(ey, em, ed)}`;
+    if (sm !== em) return `${full(sy, sm, sd)} – ${+em}月${+ed}日`;
+    return `${full(sy, sm, sd)} – ${+ed}日`;
+  }
   const d = (iso: string, opts: Intl.DateTimeFormatOptions) =>
-    new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-MY', { ...opts, timeZone: 'UTC' });
-  const [sy, sm] = start.split('-');
-  const [ey, em] = end.split('-');
+    new Date(`${iso}T12:00:00Z`).toLocaleDateString(locale, { ...opts, timeZone: 'UTC' });
   const endFull = d(end, { day: 'numeric', month: 'short', year: 'numeric' });
   if (sy !== ey) return `${d(start, { day: 'numeric', month: 'short', year: 'numeric' })} – ${endFull}`;
   if (sm !== em) return `${d(start, { day: 'numeric', month: 'short' })} – ${endFull}`;
@@ -58,8 +67,8 @@ export function eventDays(start: string, end: string): number {
 }
 
 /** Format a timestamp in Malaysia time, e.g. '15 Nov, 3:05 pm'. */
-export function formatDateTime(ts: string): string {
-  return new Date(ts).toLocaleString('en-MY', {
+export function formatDateTime(ts: string, locale = 'en-MY'): string {
+  return new Date(ts).toLocaleString(locale, {
     day: 'numeric',
     month: 'short',
     hour: 'numeric',

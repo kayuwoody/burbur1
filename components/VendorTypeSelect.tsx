@@ -18,6 +18,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useVendorTypes } from './useVendorTypes';
+import { useT } from '@/components/LanguageProvider';
 
 /** Compare names the way the server does: trimmed, single spaces, any case. */
 const norm = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
@@ -26,7 +27,7 @@ export default function VendorTypeSelect({
   typeId,
   typedName,
   onChange,
-  placeholder = 'Start typing, e.g. Food, Crafts…',
+  placeholder,
 }: {
   typeId: number | null;
   typedName: string | null;
@@ -34,6 +35,8 @@ export default function VendorTypeSelect({
   placeholder?: string;
 }) {
   const types = useVendorTypes();
+  // Translated texts (the admin area always gets English).
+  const { t: tr } = useT();
   const listId = useId();
   const [text, setText] = useState(typedName ?? '');
   const [open, setOpen] = useState(false);
@@ -80,7 +83,7 @@ export default function VendorTypeSelect({
         aria-autocomplete="list"
         value={text}
         maxLength={40}
-        placeholder={placeholder}
+        placeholder={placeholder ?? tr('vt.placeholder')}
         onFocus={() => {
           setOpen(true);
           setActive(0);
@@ -112,7 +115,7 @@ export default function VendorTypeSelect({
         }}
       />
       {/* While the list is open the hint sits inside it; once closed, keep it visible here. */}
-      {isNew && !open && <div className="small muted" style={{ marginTop: 4 }}>New type: “{text.trim()}” will be added</div>}
+      {isNew && !open && <div className="small muted" style={{ marginTop: 4 }}>{tr('vt.newHint', { name: text.trim() })}</div>}
       {open && (matches.length > 0 || isNew) && (
         <ul className="combo-list" id={listId} role="listbox">
           {matches.map((t, i) => (
@@ -141,7 +144,7 @@ export default function VendorTypeSelect({
                 pick(text.trim());
               }}
             >
-              + Add “{text.trim()}” as a new type
+              {tr('vt.add', { name: text.trim() })}
             </li>
           )}
         </ul>

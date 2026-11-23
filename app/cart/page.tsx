@@ -16,6 +16,7 @@ import { removeCartItems, setCart, toggleCartItem, useCart } from '@/lib/cart';
 import { useAuth } from '@/components/AuthProvider';
 import { compareStallNo, formatDateRange, rm } from '@/lib/util';
 import type { CartItem } from '@/lib/types';
+import { useT } from '@/components/LanguageProvider';
 
 export default function CartPage() {
   const cart = useCart();
@@ -23,6 +24,7 @@ export default function CartPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t, locale } = useT();
 
   // Group lines by event so the vendor sees one block per date.
   const groups = new Map<string, CartItem[]>();
@@ -49,13 +51,9 @@ export default function CartPage() {
       if (err instanceof ApiError && err.status === 409 && Array.isArray(err.body.unavailable)) {
         const gone = err.body.unavailable as { event_id: string; stall_no: string }[];
         removeCartItems(gone);
-        setError(
-          `Sorry, these stalls were just taken and have been removed from your cart: ${gone
-            .map((g) => `${g.stall_no} (${g.event_id})`)
-            .join(', ')}. Please review and try again.`,
-        );
+        setError(t('cart.taken', { list: gone.map((g) => `${g.stall_no} (${g.event_id})`).join(', ') }));
       } else {
-        setError(err instanceof Error ? err.message : 'Checkout failed');
+        setError(err instanceof Error ? err.message : t('cart.failed'));
       }
     } finally {
       setBusy(false);
@@ -64,12 +62,12 @@ export default function CartPage() {
 
   return (
     <div className="narrow">
-      <h1>Your cart</h1>
+      <h1>{t('cart.title')}</h1>
       {error && <p className="card error">{error}</p>}
       {cart.length === 0 ? (
         <div className="card">
-          <p className="muted">Your cart is empty.</p>
-          <Link href="/" className="btn btn-primary">Browse events</Link>
+          <p className="muted">{t('cart.empty')}</p>
+          <Link href="/" className="btn btn-primary">{t('common.browse')}</Link>
         </div>
       ) : (
         <>
@@ -78,18 +76,18 @@ export default function CartPage() {
               <div className="spread">
                 <div>
                   <strong>{items[0].event_name}</strong>
-                  <div className="small muted">{formatDateRange(items[0].start_date, items[0].end_date)}</div>
+                  <div className="small muted">{formatDateRange(items[0].start_date, items[0].end_date, locale)}</div>
                 </div>
-                <Link href={`/events/${eventId}`} className="btn btn-sm">Edit</Link>
+                <Link href={`/events/${eventId}`} className="btn btn-sm">{t('cart.edit')}</Link>
               </div>
               <table style={{ marginTop: 8 }}>
                 <tbody>
                   {items.map((c) => (
                     <tr key={c.stall_no}>
-                      <td>Stall {c.stall_no}</td>
+                      <td>{t('common.stall', { no: c.stall_no })}</td>
                       <td className="right">{rm(c.price)}</td>
                       <td className="right" style={{ width: 1 }}>
-                        <button className="btn btn-sm btn-danger" onClick={() => toggleCartItem(c)} aria-label={`Remove stall ${c.stall_no}`}>
+                        <button className="btn btn-sm btn-danger" onClick={() => toggleCartItem(c)} aria-label={t('cart.remove', { no: c.stall_no })}>
                           ✕
                         </button>
                       </td>
@@ -101,15 +99,14 @@ export default function CartPage() {
           ))}
           <div className="card stack">
             <div className="spread">
-              <strong>Total</strong>
+              <strong>{t('common.total')}</strong>
               <strong>{rm(total)}</strong>
             </div>
             <p className="small muted">
-              Booking holds your stalls while you pay by bank transfer. You'll get the bank details on the next screen.
-              Final price is confirmed at checkout.
+              {t('cart.note')}
             </p>
             <button className="btn btn-primary btn-block" onClick={checkout} disabled={busy}>
-              {busy ? 'Booking…' : session ? 'Book these stalls' : 'Log in to book'}
+              {busy ? t('cart.booking') : session ? t('cart.book') : t('cart.loginToBook')}
             </button>
           </div>
         </>

@@ -12,6 +12,23 @@ import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import Header from '@/components/Header';
 import SiteFooter from '@/components/SiteFooter';
+import { LanguageProvider } from '@/components/LanguageProvider';
+import { cookies, headers } from 'next/headers';
+import { isLang, LANG_COOKIE, LANGS, type Lang } from '@/lib/i18n';
+
+/**
+ * Pick the starting language: the visitor's saved choice (cookie) if any,
+ * otherwise their browser's language (Chinese / Malay), otherwise English.
+ */
+function initialLang(): Lang {
+  const saved = cookies().get(LANG_COOKIE)?.value;
+  if (isLang(saved)) return saved;
+  const accept = (headers().get('accept-language') ?? '').toLowerCase();
+  const first = accept.split(',')[0]?.trim() ?? '';
+  if (first.startsWith('zh')) return 'zh';
+  if (first.startsWith('ms')) return 'ms';
+  return 'en';
+}
 
 // Amatic SC: hand-drawn capitals, close to the "GOOD VIBES ONLY MARKET" badge lettering.
 const display = Amatic_SC({ subsets: ['latin'], weight: ['700'], variable: '--font-display' });
@@ -26,14 +43,17 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#8abbb5' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = initialLang();
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang={LANGS.find((l) => l.code === lang)!.htmlLang} className={`${display.variable} ${body.variable}`}>
       <body>
-        <AuthProvider>
-          <Header />
-          <main className="container">{children}</main>
-          <SiteFooter />
-        </AuthProvider>
+        <LanguageProvider initial={lang}>
+          <AuthProvider>
+            <Header />
+            <main className="container">{children}</main>
+            <SiteFooter />
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -11,12 +11,14 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 import { useCart } from '@/lib/cart';
+import { LanguageSwitcher, useT } from './LanguageProvider';
 
 export default function Header() {
   const { session, me, signOut } = useAuth();
   const cart = useCart();
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useT();
 
   /** Highlight the nav link for the current section. */
   const cls = (href: string) =>
@@ -34,7 +36,7 @@ export default function Header() {
           <img src={inAdmin ? '/brand/logo-96.png' : '/brand/gvo-logo-128.png'} alt="" />
           <span>
             <span className="brand-name">{inAdmin ? 'Maniacs Mansion' : 'Good Vibes Only Market'}</span>
-            <span className="brand-sub">{inAdmin ? 'Admin' : 'Stall booking'}</span>
+            <span className="brand-sub">{inAdmin ? 'Admin' : t('brand.sub')}</span>
           </span>
         </Link>
         <nav className="nav">
@@ -49,12 +51,12 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link href="/" className={cls('/')}>Events</Link>
+              <Link href="/" className={cls('/')}>{t('nav.markets')}</Link>
               <Link href="/cart" className={cls('/cart')}>
-                Cart{cart.length > 0 && <span className="badge-count">{cart.length}</span>}
+                {t('nav.cart')}{cart.length > 0 && <span className="badge-count">{cart.length}</span>}
               </Link>
-              {session && <Link href="/bookings" className={cls('/bookings')}>My bookings</Link>}
-              {session && <Link href="/profile" className={cls('/profile')}>Profile</Link>}
+              {session && <Link href="/bookings" className={cls('/bookings')}>{t('nav.bookings')}</Link>}
+              {session && <Link href="/profile" className={cls('/profile')}>{t('nav.profile')}</Link>}
             </>
           )}
           {session ? (
@@ -64,11 +66,13 @@ export default function Header() {
                 router.push('/');
               }}
             >
-              Log out
+              {t('nav.logout')}
             </button>
           ) : (
-            <Link href="/login" className={cls('/login')}>Log in</Link>
+            <Link href="/login" className={cls('/login')}>{t('nav.login')}</Link>
           )}
+          {/* Language choice: vendor site only (admin stays English) */}
+          {!inAdmin && <LanguageSwitcher />}
         </nav>
       </div>
     </header>

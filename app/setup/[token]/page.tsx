@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { formatDateRange, formatDateTime } from '@/lib/util';
+import { useT } from '@/components/LanguageProvider';
 
 type Worker = { name: string; ic: string };
 type Item = { device: string; watts: string }; // watts kept as typed text while editing
@@ -39,6 +40,7 @@ export default function SetupFormPage({ params }: { params: { token: string } })
   const [items, setItems] = useState<Item[]>([blankItem()]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const { t, locale } = useT();
 
   // Load the form and any saved answers.
   useEffect(() => {
@@ -67,16 +69,16 @@ export default function SetupFormPage({ params }: { params: { token: string } })
         body: { workers, extra_power: extraPower, power_items: extraPower ? items : [] },
       });
       setData((d) => (d ? { ...d, updated_at: r.updated_at, submitted_at: d.submitted_at ?? r.updated_at } : d));
-      setMsg({ text: 'Thank you! Your details have been saved. You can come back to this link to make changes.' });
+      setMsg({ text: t('setup.thanks') });
     } catch (err) {
-      setMsg({ text: err instanceof Error ? err.message : 'Could not save', error: true });
+      setMsg({ text: err instanceof Error ? err.message : t('common.couldNotSave'), error: true });
     } finally {
       setBusy(false);
     }
   }
 
-  if (error) return <div className="narrow card"><h1>Setup details</h1><p className="error">{error}</p></div>;
-  if (!data) return <p className="muted">Loading…</p>;
+  if (error) return <div className="narrow card"><h1>{t('setup.title')}</h1><p className="error">{error}</p></div>;
+  if (!data) return <p className="muted">{t('common.loading')}</p>;
 
   const totalWatts = items.reduce((s, it) => s + (Number(it.watts) || 0), 0);
   const disabled = data.locked || busy;
@@ -86,87 +88,83 @@ export default function SetupFormPage({ params }: { params: { token: string } })
       <div className="card stack">
         <div>
           <div className="small muted">
-            {formatDateRange(data.event.start_date, data.event.end_date)}
+            {formatDateRange(data.event.start_date, data.event.end_date, locale)}
             {data.event.venue && <> · {data.event.venue}</>}
           </div>
-          <h1 style={{ margin: '4px 0' }}>Setup details</h1>
+          <h1 style={{ margin: '4px 0' }}>{t('setup.title')}</h1>
           <div>
             <strong>{data.vendor_name}</strong> · {data.event.name}
-            {data.stalls.length > 0 && <> · Stall {data.stalls.join(', ')}</>}
+            {data.stalls.length > 0 && <> · {t('setup.stalls', { list: data.stalls.join(', ') })}</>}
           </div>
         </div>
         {data.updated_at && (
-          <p className="small success" style={{ margin: 0 }}>Last saved {formatDateTime(data.updated_at)}. You can update it below.</p>
+          <p className="small success" style={{ margin: 0 }}>{t('setup.lastSaved', { time: formatDateTime(data.updated_at, locale) })}</p>
         )}
-        {data.locked && <p className="small error" style={{ margin: 0 }}>This event has ended, so these details can no longer be changed.</p>}
+        {data.locked && <p className="small error" style={{ margin: 0 }}>{t('setup.locked')}</p>}
       </div>
 
       <form onSubmit={submit}>
         {/* ---------- 1. Setup crew / work passes ---------- */}
         <fieldset className="card stack" disabled={disabled} style={{ border: '1px solid var(--border)' }}>
-          <h2 style={{ marginTop: 0 }}>1. Your setup crew</h2>
+          <h2 style={{ marginTop: 0 }}>{t('setup.crewTitle')}</h2>
           <p className="small muted" style={{ marginTop: 0 }}>
-            The venue’s security office issues a <strong>work pass</strong> to everyone who comes in to set up or
-            pack down your stall. Please list each person with their full name (as in their IC) and IC number.
-            At least one person is needed.
+            {t('setup.crewNote')}
           </p>
           {workers.map((w, i) => (
             <div key={i} className="setup-row">
               <div>
-                <label>Full name</label>
-                <input required value={w.name} placeholder="e.g. Ali bin Abu" onChange={(e) => edit(workers, setWorkers, i, { name: e.target.value })} />
+                <label>{t('setup.fullName')}</label>
+                <input required value={w.name} placeholder={t('setup.namePh')} onChange={(e) => edit(workers, setWorkers, i, { name: e.target.value })} />
               </div>
               <div>
-                <label>IC number</label>
-                <input required inputMode="numeric" value={w.ic} placeholder="e.g. 900101-14-5678" onChange={(e) => edit(workers, setWorkers, i, { ic: e.target.value })} />
+                <label>{t('setup.ic')}</label>
+                <input required inputMode="numeric" value={w.ic} placeholder={t('setup.icPh')} onChange={(e) => edit(workers, setWorkers, i, { ic: e.target.value })} />
               </div>
               {workers.length > 1 && (
-                <button type="button" className="btn btn-sm btn-danger" aria-label={`Remove person ${i + 1}`} onClick={() => setWorkers(workers.filter((_, j) => j !== i))}>✕</button>
+                <button type="button" className="btn btn-sm btn-danger" aria-label={t('setup.removePerson', { n: i + 1 })} onClick={() => setWorkers(workers.filter((_, j) => j !== i))}>✕</button>
               )}
             </div>
           ))}
-          <div><button type="button" className="btn btn-sm" onClick={() => setWorkers([...workers, blankWorker()])}>+ Add person</button></div>
+          <div><button type="button" className="btn btn-sm" onClick={() => setWorkers([...workers, blankWorker()])}>{t('setup.addPerson')}</button></div>
         </fieldset>
 
         {/* ---------- 2. Power requirements ---------- */}
         <fieldset className="card stack" disabled={disabled} style={{ border: '1px solid var(--border)' }}>
-          <h2 style={{ marginTop: 0 }}>2. Power requirements</h2>
+          <h2 style={{ marginTop: 0 }}>{t('setup.powerTitle')}</h2>
           <p className="small muted" style={{ marginTop: 0 }}>
-            We need to plan the power supply for every stall. <strong>Standard items</strong> such as LED lighting
-            and phone / laptop chargers are fine and don’t need to be listed.
+            {t('setup.powerNote')}
           </p>
           <div>
-            <label style={{ color: 'var(--text)', fontWeight: 700 }}>Will you bring anything else that uses electricity?</label>
+            <label style={{ color: 'var(--text)', fontWeight: 700 }}>{t('setup.powerQ')}</label>
             {/* Stacked so each answer reads on one line, even on a phone */}
             <div className="stack" style={{ marginTop: 6 }}>
-              <label className="check"><input type="radio" name="extra" required checked={extraPower === false} onChange={() => setExtraPower(false)} /> No, only standard items</label>
-              <label className="check"><input type="radio" name="extra" checked={extraPower === true} onChange={() => setExtraPower(true)} /> Yes, I’ll list them below</label>
+              <label className="check"><input type="radio" name="extra" required checked={extraPower === false} onChange={() => setExtraPower(false)} /> {t('setup.powerNo')}</label>
+              <label className="check"><input type="radio" name="extra" checked={extraPower === true} onChange={() => setExtraPower(true)} /> {t('setup.powerYes')}</label>
             </div>
           </div>
           {extraPower && (
             <>
               <p className="small muted" style={{ margin: 0 }}>
-                List each appliance or device and its power in watts (W). It’s usually on a label on the back or
-                bottom of the appliance.
+                {t('setup.powerList')}
               </p>
               {items.map((it, i) => (
                 <div key={i} className="setup-row">
                   <div>
-                    <label>Appliance / device</label>
-                    <input value={it.device} placeholder="Blender" onChange={(e) => edit(items, setItems, i, { device: e.target.value })} />
+                    <label>{t('setup.device')}</label>
+                    <input value={it.device} placeholder={t('setup.devicePh')} onChange={(e) => edit(items, setItems, i, { device: e.target.value })} />
                   </div>
                   <div>
-                    <label>Power (W)</label>
+                    <label>{t('setup.watts')}</label>
                     <input inputMode="numeric" value={it.watts} placeholder="900" onChange={(e) => edit(items, setItems, i, { watts: e.target.value })} />
                   </div>
                   {items.length > 1 && (
-                    <button type="button" className="btn btn-sm btn-danger" aria-label={`Remove appliance ${i + 1}`} onClick={() => setItems(items.filter((_, j) => j !== i))}>✕</button>
+                    <button type="button" className="btn btn-sm btn-danger" aria-label={t('setup.removeItem', { n: i + 1 })} onClick={() => setItems(items.filter((_, j) => j !== i))}>✕</button>
                   )}
                 </div>
               ))}
               <div className="spread">
-                <button type="button" className="btn btn-sm" onClick={() => setItems([...items, blankItem()])}>+ Add appliance</button>
-                {totalWatts > 0 && <span className="small">Total: <strong>{totalWatts.toLocaleString()} W</strong></span>}
+                <button type="button" className="btn btn-sm" onClick={() => setItems([...items, blankItem()])}>{t('setup.addItem')}</button>
+                {totalWatts > 0 && <strong className="small">{t('setup.total', { w: totalWatts.toLocaleString() })}</strong>}
               </div>
             </>
           )}
@@ -175,7 +173,7 @@ export default function SetupFormPage({ params }: { params: { token: string } })
         {msg && <p className={`card small ${msg.error ? 'error' : 'success'}`}>{msg.text}</p>}
         {!data.locked && (
           <button className="btn btn-primary btn-block btn-lg" disabled={busy}>
-            {busy ? 'Saving…' : data.submitted_at ? 'Save changes' : 'Submit details'}
+            {busy ? t('common.saving') : t(data.submitted_at ? 'setup.saveChanges' : 'setup.submit')}
           </button>
         )}
       </form>

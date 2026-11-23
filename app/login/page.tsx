@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabaseBrowser';
 import { useAuth } from '@/components/AuthProvider';
+import { useT } from '@/components/LanguageProvider';
 
 /** Read ?next= without useSearchParams (avoids a Suspense boundary). Only same-site paths. */
 function nextPath(): string {
@@ -27,6 +28,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const { t } = useT();
 
   // Already logged in → continue to where they were going.
   useEffect(() => {
@@ -53,16 +55,18 @@ export default function LoginPage() {
         });
         if (error) throw error;
         // With email confirmation on (recommended), there's no session yet.
-        if (!data.session) setInfo('Check your email for a confirmation link, then log in.');
+        if (!data.session) setInfo(t('login.checkEmail'));
       } else {
         const { error } = await sb.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        setInfo('If that email has an account, a reset link is on its way.');
+        setInfo(t('login.resetSent'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      // Supabase's most common message gets a translated version; others show as-is.
+      const msg = err instanceof Error ? err.message : t('common.error');
+      setError(/invalid login credentials/i.test(msg) ? t('login.invalid') : msg);
     } finally {
       setBusy(false);
     }
@@ -73,15 +77,15 @@ export default function LoginPage() {
       <div className="card stack auth-card">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="auth-logo" src="/brand/gvo-logo-256.png" alt="Good Vibes Only Market" />
-        <h1>{mode === 'signin' ? 'Log in' : mode === 'signup' ? 'Create an account' : 'Reset password'}</h1>
+        <h1>{t(mode === 'signin' ? 'login.signin' : mode === 'signup' ? 'login.signup' : 'login.reset')}</h1>
         <form onSubmit={submit} className="stack">
           <div>
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t('login.email')}</label>
             <input id="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           {mode !== 'reset' && (
             <div>
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">{t('login.password')}</label>
               <input
                 id="password"
                 type="password"
@@ -96,13 +100,13 @@ export default function LoginPage() {
           {error && <p className="error small">{error}</p>}
           {info && <p className="success small">{info}</p>}
           <button className="btn btn-primary btn-block" disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'signin' ? 'Log in' : mode === 'signup' ? 'Create account' : 'Send reset link'}
+            {busy ? t('login.wait') : t(mode === 'signin' ? 'login.btnSignin' : mode === 'signup' ? 'login.btnSignup' : 'login.btnReset')}
           </button>
         </form>
         <div className="auth-links">
-          {mode !== 'signin' && <button className="link-btn" onClick={() => setMode('signin')}>I already have an account</button>}
-          {mode !== 'signup' && <button className="link-btn" onClick={() => setMode('signup')}>New vendor? Create an account</button>}
-          {mode === 'signin' && <button className="link-btn" onClick={() => setMode('reset')}>Forgot password?</button>}
+          {mode !== 'signin' && <button className="link-btn" onClick={() => setMode('signin')}>{t('login.haveAccount')}</button>}
+          {mode !== 'signup' && <button className="link-btn" onClick={() => setMode('signup')}>{t('login.newVendor')}</button>}
+          {mode === 'signin' && <button className="link-btn" onClick={() => setMode('reset')}>{t('login.forgot')}</button>}
         </div>
       </div>
     </div>

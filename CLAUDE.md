@@ -52,3 +52,9 @@ NEXT_PUBLIC_SITE_URL
 - Money columns are `numeric`; coerce with `Number()` when reading via PostgREST.
 - Admin stall edits never change status of stalls tied to an online booking. Use booking confirm/cancel.
 - Code style: verbose doc comments explaining the concept of each function/section.
+
+## Languages (i18n)
+- Vendor-facing pages come in English, Chinese (中文) and Malay (BM). Phrases live in `lib/i18n.ts` (`DICTS.en` is the master; `zh`/`ms` are typed to have exactly the same keys, so a missing translation is a type error).
+- `components/LanguageProvider.tsx`: `useT()` → `{ t, lang, locale, setLang }`; `LanguageSwitcher` in the header. Choice saved in the `lang` cookie (read server-side in `app/layout.tsx`, falls back to Accept-Language) so there's no flash of English.
+- Pass `locale` to `formatDate` / `formatDateRange` / `formatDateTime` on vendor pages.
+- Not translated: the admin area (forced to English), invoices/receipt PDFs, WhatsApp message templates, and server error messages.

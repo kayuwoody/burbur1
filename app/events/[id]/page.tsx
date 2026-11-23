@@ -15,6 +15,7 @@ import { toggleCartItem, useCart } from '@/lib/cart';
 import { formatDateRange, rm } from '@/lib/util';
 import StallMap, { Legend, type StallLook } from '@/components/StallMap';
 import type { EventDetail, MapStall } from '@/lib/types';
+import { useT } from '@/components/LanguageProvider';
 
 const REFRESH_MS = 20_000;
 
@@ -22,6 +23,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
   const [detail, setDetail] = useState<EventDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cart = useCart();
+  const { t, locale } = useT();
 
   /** Fetch the latest stall statuses. */
   const load = useCallback(() => {
@@ -42,7 +44,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
   }, [load]);
 
   if (error) return <p className="error">{error}</p>;
-  if (!detail) return <p className="muted">Loading map…</p>;
+  if (!detail) return <p className="muted">{t('event.loading')}</p>;
 
   const { event, layout, stalls } = detail;
   const bookable = event.status === 'open';
@@ -70,10 +72,12 @@ export default function EventPage({ params }: { params: { id: string } }) {
       price: s.price,
     });
 
+  /** Hover text for a stall, in the visitor's language. */
   const tooltip = (s: MapStall) =>
     s.status === 'available'
-      ? `Stall ${s.stall_no} · ${rm(s.price)}${s.power_watts ? ` · ${s.power_watts} W power` : ''}`
-      : `Stall ${s.stall_no} · ${s.mine ? 'yours' : 'not available'}`;
+      ? t('event.tipAvailable', { no: s.stall_no, price: rm(s.price) }) +
+        (s.power_watts ? t('event.tipPower', { w: s.power_watts }) : '')
+      : t(s.mine ? 'event.tipYours' : 'event.tipTaken', { no: s.stall_no });
 
   const available = stalls.filter((s) => s.status === 'available' && !s.mine);
 
@@ -81,23 +85,23 @@ export default function EventPage({ params }: { params: { id: string } }) {
     <>
       <div className="spread">
         <div>
-          <div className="small muted">{formatDateRange(event.start_date, event.end_date)} · Event {event.id}</div>
+          <div className="small muted">{formatDateRange(event.start_date, event.end_date, locale)} · {t('event.id', { id: event.id })}</div>
           <h1 style={{ marginTop: 4 }}>{event.name}</h1>
         </div>
-        <Link href="/" className="btn btn-sm">← All dates</Link>
+        <Link href="/" className="btn btn-sm">{t('event.allDates')}</Link>
       </div>
-      {!bookable && <p className="card muted">Booking for this event is closed.</p>}
+      {!bookable && <p className="card muted">{t('event.closed')}</p>}
 
       <div className="map-layout">
         <div>
           <StallMap layout={layout} stalls={stalls} look={look} onStallClick={onStallClick} tooltip={tooltip} />
           <Legend
             items={[
-              { label: 'Available', color: 'var(--stall-available)' },
-              { label: 'In your cart', color: 'var(--stall-selected)' },
-              { label: 'Yours', color: 'var(--stall-mine)' },
-              { label: 'Taken', color: 'var(--stall-taken)' },
-              { label: 'Not offered', color: 'var(--stall-blocked)', hatched: true },
+              { label: t('legend.available'), color: 'var(--stall-available)' },
+              { label: t('legend.inCart'), color: 'var(--stall-selected)' },
+              { label: t('legend.yours'), color: 'var(--stall-mine)' },
+              { label: t('legend.taken'), color: 'var(--stall-taken)' },
+              { label: t('legend.notOffered'), color: 'var(--stall-blocked)', hatched: true },
             ]}
           />
         </div>
@@ -105,7 +109,7 @@ export default function EventPage({ params }: { params: { id: string } }) {
         <aside className="stack">
           {/* Chip list: an easier way to pick on a small phone screen */}
           <div className="card stack">
-            <strong>Available stalls ({available.length})</strong>
+            <strong>{t('event.availableStalls', { n: available.length })}</strong>
             <div className="chips">
               {available.map((s) => (
                 <button
@@ -123,12 +127,12 @@ export default function EventPage({ params }: { params: { id: string } }) {
 
           {cartHere.length > 0 && (
             <div className="card">
-              <strong>Selected for this event</strong>
+              <strong>{t('event.selected')}</strong>
               <table style={{ marginTop: 8 }}>
                 <tbody>
                   {cartHere.map((s) => (
                     <tr key={s.stall_no}>
-                      <td>Stall {s.stall_no}</td>
+                      <td>{t('common.stall', { no: s.stall_no })}</td>
                       <td className="muted small">{s.power_watts ? `${s.power_watts} W` : ''}</td>
                       <td className="right">{rm(s.price)}</td>
                     </tr>
@@ -143,11 +147,11 @@ export default function EventPage({ params }: { params: { id: string } }) {
       {cart.length > 0 && (
         <div className="cart-bar spread">
           <span>
-            <strong>{cart.length}</strong> stall{cart.length === 1 ? '' : 's'} in cart · <strong>{rm(cartTotal)}</strong>
+            {t(cart.length === 1 ? 'event.cartOne' : 'event.cartMany', { n: cart.length })} · <strong>{rm(cartTotal)}</strong>
           </span>
           <div className="row">
-            <Link href="/" className="btn">Add another date</Link>
-            <Link href="/cart" className="btn btn-primary">Review & book →</Link>
+            <Link href="/" className="btn">{t('event.addDate')}</Link>
+            <Link href="/cart" className="btn btn-primary">{t('event.review')}</Link>
           </div>
         </div>
       )}
