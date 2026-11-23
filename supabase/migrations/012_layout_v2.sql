@@ -6,7 +6,7 @@
 --     (where 33 / 33A / 31 / 32 sat after 009).
 --   - 29, 30, 31, 32 on the row above Powerplant; 33, 33A and new 35 on the
 --     same row further right.
---   - Toilet and Entrance drawn as grey blocks; canvas is wider (1142 px).
+--   - Entrance drawn as a grey block; canvas is wider (1011 px) to fit 35.
 --
 -- CONCEPT: this is a NEW layout rather than an edit of 'main', so events that
 -- already exist keep the map their vendors booked on. New events pick a
@@ -21,7 +21,7 @@
 -- =============================================================================
 
 insert into layouts (id, name, width, height, blocks) values
-  ('main2', 'Main floor v2 (booths 35–39)', 1142, 1182, '[{"label":"Chicken Plus","x":79,"y":20,"w":173,"h":789},{"label":"Ayu Borneo","x":481,"y":20,"w":192,"h":593},{"label":"Toilet","x":1008,"y":640,"w":124,"h":169},{"label":"Escalators","x":481,"y":671,"w":314,"h":34},{"label":"Escalators","x":481,"y":712,"w":314,"h":35},{"label":"Shang","x":27,"y":920,"w":242,"h":138},{"label":"Powerplant","x":481,"y":920,"w":520,"h":138},{"label":"Entrance","x":275,"y":1080,"w":201,"h":92}]'::jsonb)
+  ('main2', 'Main floor v2 (booths 35–39)', 1011, 1182, '[{"label":"Chicken Plus","x":79,"y":20,"w":173,"h":789},{"label":"Ayu Borneo","x":481,"y":20,"w":192,"h":593},{"label":"Escalators","x":481,"y":671,"w":314,"h":34},{"label":"Escalators","x":481,"y":712,"w":314,"h":35},{"label":"Shang","x":27,"y":920,"w":242,"h":138},{"label":"Powerplant","x":481,"y":920,"w":520,"h":138},{"label":"Entrance","x":275,"y":1080,"w":201,"h":92}]'::jsonb)
 on conflict (id) do update set name = excluded.name, width = excluded.width, height = excluded.height, blocks = excluded.blocks;
 
 insert into layout_stalls (layout_id, stall_no, x, y, w, h, sort_order) values
