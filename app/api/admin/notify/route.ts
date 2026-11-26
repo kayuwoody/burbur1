@@ -5,9 +5,11 @@
  *                      was last messaged about EACH of those events
  *                      (`sent: { [event_id]: timestamp }`).
  *                      (?event_id=A still works for a single event.)
- * POST { event_ids: [A, B], vendor_id, message } → record that one message
- *                      covering those events was sent (one log row per event,
- *                      so each event keeps its own "who's been told" list).
+ * POST { event_ids: [A, B], vendor_id | vendor_ids, message } → record that
+ *                      one message covering those events was sent (one log
+ *                      row per event per vendor, so each event keeps its own
+ *                      "who's been told" list). vendor_ids is for a broadcast
+ *                      list: one message sent to many vendors at once.
  *
  * CONCEPT: we don't send WhatsApp messages from the server (that needs the
  * paid Business API). The admin screen opens a wa.me link per vendor with
@@ -67,18 +69,22 @@ export const POST = handle(async (req) => {
     event_ids?: string[];
     event_id?: string; // older single-event form
     vendor_id?: string;
+    vendor_ids?: string[];
     message?: string;
   };
-  const { vendor_id, message } = body;
-  if (!vendor_id || !message) throw new HttpError(400, 'vendor_id and message are required');
+  const { message } = body;
+  const vendorIds = [...new Set(body.vendor_ids ?? (body.vendor_id ? [body.vendor_id] : []))];
+  if (!vendorIds.length || !message) throw new HttpError(400, 'vendor_id(s) and message are required');
+  if (vendorIds.length > 1000) throw new HttpError(400, 'Too many vendors in one go');
   const eventIds = [...new Set(body.event_ids ?? (body.event_id ? [body.event_id] : []))];
 
-  // One row per event the message covered (or one event-less row), all with
-  // the same text, so each event's "Not yet sent" list stays accurate.
+  // One row per (event, vendor) the message covered (or event-less rows), all
+  // with the same text, so each event's "Not yet sent" list stays accurate.
+  const events = eventIds.length ? eventIds : [null];
   const rows = must(
     await supabase
       .from('notification_log')
-      .insert((eventIds.length ? eventIds : [null]).map((event_id) => ({ event_id, vendor_id, message })))
+      .insert(vendorIds.flatMap((vendor_id) => events.map((event_id) => ({ event_id, vendor_id, message }))))
       .select('created_at'),
   ) as { created_at: string }[];
   return NextResponse.json({ ok: true, sent_at: rows[0]?.created_at ?? new Date().toISOString() });

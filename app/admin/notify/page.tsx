@@ -8,6 +8,14 @@
  * fee. Clicking also logs the send against EVERY ticked event, so each
  * event's list shows who's already been told about it.
  *
+ * Two ways to send (see the "Broadcast list" card):
+ *   - Broadcast (preferred, less likely to be flagged as spam): download the
+ *     audience as contacts, import them into the business phone, build a
+ *     broadcast list in WhatsApp Business, paste the copied message, then
+ *     "Mark as notified" here. Broadcasts only reach vendors who have saved
+ *     OUR number, which is why the vendor site has "Save our number" buttons.
+ *   - One by one: the per-vendor Send buttons below (personalised).
+ *
  * Placeholders:
  *   {name} {business}         the vendor
  *   {events}                  a bullet list: one line per ticked event with
@@ -22,7 +30,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { useVendorTypes } from '@/components/useVendorTypes';
 import { api } from '@/lib/api';
-import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, waLink } from '@/lib/util';
+import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, todayMYT, waLink } from '@/lib/util';
+import { downloadText, vcardFile } from '@/lib/vcard';
 import type { EventSummary } from '@/lib/types';
 
 type Row = {
@@ -38,6 +47,9 @@ type Row = {
   sent: Record<string, string>;
 };
 
+/** WhatsApp broadcast lists hold at most 256 contacts each. */
+const BROADCAST_MAX = 256;
+
 const DEFAULT_TEMPLATE =
   'Hi {name}! Stall bookings are now open for:\n{events}\n\nPick your spot at the links above. First come, first served!';
 
@@ -52,6 +64,8 @@ export default function AdminNotifyPage() {
   // Vendor type filter: '' = everyone, else a type id (e.g. only Activities).
   const [typeFilter, setTypeFilter] = useState('');
   const types = useVendorTypes();
+  // "Copied!" feedback on the broadcast message button.
+  const [copied, setCopied] = useState(false);
 
   // Load events once; pre-tick ?event= if we came from an event page,
   // otherwise the first upcoming one.
@@ -138,6 +152,64 @@ export default function AdminNotifyPage() {
   const audience = rows?.filter((r) => !typeFilter || String(r.vendor_type_id) === typeFilter) ?? [];
   const shown = audience.filter((r) => filter === 'all' || !toldAll(r));
   const sentCount = audience.filter(toldAll).length;
+  // Broadcast targets: the vendors listed on the current tab with a usable number.
+  const targets = shown.filter((r) => waLink(r.phone, ''));
+  const typeName = types.find((t) => String(t.id) === typeFilter)?.name;
+
+  /** The same text for everyone: a broadcast can't be personalised. */
+  const broadcastText = fillTemplate(template, { ...eventValues, name: 'there', business: 'your stall' });
+
+  /**
+   * Download the broadcast targets as contact cards, split into files of
+   * 256 (one file per broadcast list). Names start with "GVO ·" so they're
+   * easy to find and tick when building the list in WhatsApp.
+   */
+  function downloadContacts() {
+    const label = (typeName ?? 'all').replace(/[^\w]+/g, '-');
+    const parts = Math.ceil(targets.length / BROADCAST_MAX);
+    for (let i = 0; i < parts; i++) {
+      const chunk = targets.slice(i * BROADCAST_MAX, (i + 1) * BROADCAST_MAX);
+      const text = vcardFile(
+        chunk.map((r) => ({
+          name: `GVO · ${r.business_name}${r.contact_name ? ` (${r.contact_name})` : ''}`,
+          phone: r.phone,
+          org: r.business_name,
+          categories: ['GVO vendor', ...(r.vendor_type ? [r.vendor_type.name] : [])],
+          note: [r.vendor_code, r.offerings].filter(Boolean).join(' · ') || null,
+        })),
+      );
+      const suffix = parts > 1 ? `-part${i + 1}of${parts}` : '';
+      downloadText(`GVO-vendors-${label}-${todayMYT()}${suffix}.vcf`, text);
+    }
+  }
+
+  /** Put the broadcast message on the clipboard. */
+  async function copyMessage() {
+    try {
+      await navigator.clipboard.writeText(broadcastText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Copy this message:', broadcastText);
+    }
+  }
+
+  /** After sending the broadcast: log it for every target, for every ticked event. */
+  async function markAllSent() {
+    if (!targets.length) return;
+    if (!window.confirm(`Mark ${targets.length} vendor(s) as notified about ${chosen.map((e) => e.name).join(' & ')}?`)) return;
+    try {
+      const { sent_at } = await api<{ sent_at: string }>('/api/admin/notify', {
+        method: 'POST',
+        body: { event_ids: selected, vendor_ids: targets.map((r) => r.id), message: broadcastText },
+      });
+      const ids = new Set(targets.map((r) => r.id));
+      const stamp = Object.fromEntries(selected.map((id) => [id, sent_at]));
+      setRows((rs) => rs?.map((x) => (ids.has(x.id) ? { ...x, sent: { ...x.sent, ...stamp } } : x)) ?? rs);
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : 'Could not save');
+    }
+  }
 
   return (
     <>
@@ -198,6 +270,33 @@ export default function AdminNotifyPage() {
             <button className={`tab${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>
               All ({audience.length})
             </button>
+          </div>
+
+          {/* ---------- Broadcast list (preferred: one message, less spam risk) ---------- */}
+          <div className="card stack">
+            <strong>Send as a broadcast list</strong>
+            <ol className="small" style={{ margin: 0, paddingLeft: 18 }}>
+              <li>
+                Download the {targets.length} vendor(s) on this tab as contacts and open the file on the business phone to
+                import them. Each name starts with <em>GVO ·</em>.
+                {targets.length > BROADCAST_MAX && <> Split into {Math.ceil(targets.length / BROADCAST_MAX)} files: a broadcast list holds max {BROADCAST_MAX}.</>}
+              </li>
+              <li>In WhatsApp Business: ⋮ → New broadcast, search “GVO”, tick the vendors.</li>
+              <li>Copy the message below, paste it and send.</li>
+              <li>Come back and press <strong>Mark as notified</strong>.</li>
+            </ol>
+            <p className="small muted" style={{ margin: 0 }}>
+              Broadcasts only reach vendors who have saved <em>our</em> number. The vendor site has “Save our number”
+              buttons; anyone who hasn’t done that can still be sent one by one below. A broadcast can’t be personalised, so{' '}
+              {'{name}'} becomes “there”.
+            </p>
+            <div className="row">
+              <button className="btn btn-sm" onClick={downloadContacts} disabled={!targets.length}>⬇ Download contacts (.vcf)</button>
+              <button className="btn btn-sm" onClick={copyMessage}>{copied ? '✓ Copied' : '📋 Copy message'}</button>
+              <button className="btn btn-sm btn-primary" onClick={markAllSent} disabled={!targets.length}>
+                ✓ Mark {targets.length} as notified
+              </button>
+            </div>
           </div>
 
           <div className="card table-wrap">

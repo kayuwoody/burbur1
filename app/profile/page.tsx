@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import VendorTypeSelect from '@/components/VendorTypeSelect';
 import { invalidateVendorTypes } from '@/components/useVendorTypes';
 import { SocialLinksInput } from '@/components/SocialLinks';
+import SaveContact from '@/components/SaveContact';
 import { useT } from '@/components/LanguageProvider';
 
 export default function ProfilePage() {
@@ -127,6 +128,8 @@ export default function ProfilePage() {
           <input type="checkbox" checked={form.whatsapp_opt_in} onChange={set('whatsapp_opt_in')} />
           {t('profile.optin')}
         </label>
+        {/* Opted-in vendors also need our number saved for broadcasts to arrive. */}
+        {form.whatsapp_opt_in && <SaveContact withNote />}
         {error && <p className="error small">{error}</p>}
         {saved && <p className="success small">{t('common.saved')}</p>}
         <button className="btn btn-primary btn-block" disabled={busy}>{busy ? t('common.saving') : t('common.save')}</button>

@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
 import { normalizeUrl, socialPlatform, waLink } from '@/lib/util';
 import { useT } from '@/components/LanguageProvider';
+import SaveContact from '@/components/SaveContact';
 
 type Site = {
   company_name: string | null;
@@ -59,6 +60,8 @@ export default function SiteFooter() {
             {site?.contact_phone && (wa ? <a href={wa} target="_blank" rel="noreferrer">{t('footer.whatsapp', { phone: site.contact_phone })}</a> : <span>{site.contact_phone}</span>)}
             {site?.contact_email && <a href={`mailto:${site.contact_email}`}>{site.contact_email}</a>}
           </div>
+          {/* So our WhatsApp broadcasts reach them (broadcasts need the number saved). */}
+          <div style={{ marginTop: 6 }}><SaveContact /></div>
           {/* "Follow us" links, platform named from each URL (Facebook, Instagram…) */}
           {!!site?.social_links?.length && (
             <div className="row" style={{ gap: 12, marginTop: 4 }}>

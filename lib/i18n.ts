@@ -33,6 +33,8 @@ const en = {
   'footer.whatsapp': 'WhatsApp {phone}',
   'footer.follow': 'Follow us:',
   'footer.waText': 'Hi! I have a question about booking a stall.',
+  'save.btn': '📇 Save our number',
+  'save.why': 'Save our number in your contacts so our WhatsApp updates about new markets reach you.',
 
   // ---------- Common ----------
   'common.loading': 'Loading…',
@@ -223,6 +225,8 @@ const zh: Dict = {
   'footer.whatsapp': 'WhatsApp {phone}',
   'footer.follow': '关注我们：',
   'footer.waText': '您好！我想询问关于预订摊位的事宜。',
+  'save.btn': '📇 保存我们的号码',
+  'save.why': '请把我们的号码保存到通讯录，这样您才能收到我们关于新市集的 WhatsApp 通知。',
 
   'common.loading': '加载中…',
   'common.stall': '摊位 {no}',
@@ -404,6 +408,8 @@ const ms: Dict = {
   'footer.whatsapp': 'WhatsApp {phone}',
   'footer.follow': 'Ikuti kami:',
   'footer.waText': 'Hai! Saya ada soalan tentang tempahan gerai.',
+  'save.btn': '📇 Simpan nombor kami',
+  'save.why': 'Simpan nombor kami dalam kenalan anda supaya mesej WhatsApp kami tentang pasar baharu sampai kepada anda.',
 
   'common.loading': 'Memuatkan…',
   'common.stall': 'Gerai {no}',

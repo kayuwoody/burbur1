@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { formatDateTime, rm, setupUrl } from '@/lib/util';
 import BookingItems from '@/components/BookingItems';
 import DocumentLinks from '@/components/DocumentLinks';
+import SaveContact from '@/components/SaveContact';
 import type { Booking, Settings } from '@/lib/types';
 import { useT } from '@/components/LanguageProvider';
 
@@ -144,6 +145,13 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Confirmed vendors: make sure our broadcasts about future markets reach them. */}
+      {b.status === 'confirmed' && (
+        <div className="card">
+          <SaveContact withNote />
         </div>
       )}
 
