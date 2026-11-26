@@ -1,9 +1,13 @@
 /**
  * /api/admin/notify — WhatsApp "send links" for announcing an event.
  *
- * GET  ?event_id=X → opted-in active vendors with phones, plus when each was
- *                    last messaged about this event.
- * POST { event_id, vendor_id, message } → record that a message was sent.
+ * GET  ?event_ids=A,B → opted-in active vendors with phones, plus when each
+ *                      was last messaged about EACH of those events
+ *                      (`sent: { [event_id]: timestamp }`).
+ *                      (?event_id=A still works for a single event.)
+ * POST { event_ids: [A, B], vendor_id, message } → record that one message
+ *                      covering those events was sent (one log row per event,
+ *                      so each event keeps its own "who's been told" list).
  *
  * CONCEPT: we don't send WhatsApp messages from the server (that needs the
  * paid Business API). The admin screen opens a wa.me link per vendor with
@@ -20,50 +24,62 @@ export const dynamic = 'force-dynamic';
 
 export const GET = handle(async (req) => {
   await requireAdmin(req);
-  const eventId = new URL(req.url).searchParams.get('event_id');
+  // Which events we're announcing: comma-separated list (or a single id).
+  const params = new URL(req.url).searchParams;
+  const eventIds = (params.get('event_ids') ?? params.get('event_id') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-  const vendors = must(
-    await supabase
+  // Vendor list and send history don't depend on each other: fetch both at once.
+  const [vendorsRes, logsRes] = await Promise.all([
+    supabase
       .from('vendors')
       .select('id, vendor_code, business_name, contact_name, phone, vendor_type_id, offerings, vendor_type:vendor_types(name)')
       .eq('is_active', true)
       .eq('whatsapp_opt_in', true)
       .not('phone', 'is', null)
       .order('business_name'),
-  ) as { id: string }[];
+    eventIds.length
+      ? supabase
+          .from('notification_log')
+          .select('event_id, vendor_id, created_at')
+          .in('event_id', eventIds)
+          .order('created_at', { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const vendors = must(vendorsRes) as { id: string }[];
+  const logs = must(logsRes) as { event_id: string; vendor_id: string; created_at: string }[];
 
-  // Latest send time per vendor for this event.
-  const lastSent: Record<string, string> = {};
-  if (eventId) {
-    const logs = must(
-      await supabase
-        .from('notification_log')
-        .select('vendor_id, created_at')
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: true }),
-    ) as { vendor_id: string; created_at: string }[];
-    logs.forEach((l) => (lastSent[l.vendor_id] = l.created_at));
-  }
+  // Latest send time per vendor, per event (logs are oldest-first, so the
+  // last write wins).
+  const sent: Record<string, Record<string, string>> = {};
+  logs.forEach((l) => ((sent[l.vendor_id] ??= {})[l.event_id] = l.created_at));
 
   return NextResponse.json({
-    vendors: vendors.map((v) => ({ ...v, last_sent: lastSent[v.id] ?? null })),
+    vendors: vendors.map((v) => ({ ...v, sent: sent[v.id] ?? {} })),
   });
 });
 
 export const POST = handle(async (req) => {
   await requireAdmin(req);
-  const { event_id, vendor_id, message } = (await req.json()) as {
-    event_id?: string;
+  const body = (await req.json()) as {
+    event_ids?: string[];
+    event_id?: string; // older single-event form
     vendor_id?: string;
     message?: string;
   };
+  const { vendor_id, message } = body;
   if (!vendor_id || !message) throw new HttpError(400, 'vendor_id and message are required');
-  const row = must(
+  const eventIds = [...new Set(body.event_ids ?? (body.event_id ? [body.event_id] : []))];
+
+  // One row per event the message covered (or one event-less row), all with
+  // the same text, so each event's "Not yet sent" list stays accurate.
+  const rows = must(
     await supabase
       .from('notification_log')
-      .insert({ event_id: event_id || null, vendor_id, message })
-      .select('created_at')
-      .single(),
-  );
-  return NextResponse.json({ ok: true, sent_at: (row as { created_at: string }).created_at });
+      .insert((eventIds.length ? eventIds : [null]).map((event_id) => ({ event_id, vendor_id, message })))
+      .select('created_at'),
+  ) as { created_at: string }[];
+  return NextResponse.json({ ok: true, sent_at: rows[0]?.created_at ?? new Date().toISOString() });
 });
