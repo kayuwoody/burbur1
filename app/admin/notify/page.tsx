@@ -2,11 +2,14 @@
  * /admin/notify — announce one or more events to vendors over WhatsApp.
  *
  * CONCEPT: tick the events to announce and write the message once using
- * placeholders. Each vendor row gets a "Send" button that opens WhatsApp
- * with the personalised message pre-filled (wa.me link), using the
- * company's existing WhatsApp Business app. No API account or per-message
- * fee. Clicking also logs the send against EVERY ticked event, so each
- * event's list shows who's already been told about it.
+ * placeholders. Each vendor row gets a "Copy" button that puts the
+ * personalised message on the clipboard, ready to paste into the vendor's
+ * chat in an already-open WhatsApp Web tab (no new tab per vendor). No API
+ * account or per-message fee. Copying also logs the send against EVERY
+ * ticked event, so each event's list shows who's already been told about it.
+ * A small "Open chat" link is there for vendors you haven't chatted with yet;
+ * it reuses ONE named browser tab ("whatsapp") instead of opening a new one
+ * each time.
  *
  * Two ways to send (see the "Broadcast list" card):
  *   - Broadcast (preferred, less likely to be flagged as spam): download the
@@ -14,7 +17,7 @@
  *     broadcast list in WhatsApp Business, paste the copied message, then
  *     "Mark as notified" here. Broadcasts only reach vendors who have saved
  *     OUR number, which is why the vendor site has "Save our number" buttons.
- *   - One by one: the per-vendor Send buttons below (personalised).
+ *   - One by one: the per-vendor Copy buttons below (personalised).
  *
  * Placeholders:
  *   {name} {business}         the vendor
@@ -66,6 +69,11 @@ export default function AdminNotifyPage() {
   const types = useVendorTypes();
   // "Copied!" feedback on the broadcast message button.
   const [copied, setCopied] = useState(false);
+  // Which vendor row's message was just copied (for the "✓ Copied" flash).
+  const [copiedRow, setCopiedRow] = useState<string | null>(null);
+  // Vendors copied for during this visit: they stay on the "Not yet sent"
+  // tab (greyed) so a row doesn't jump away the moment you copy it.
+  const [doneHere, setDoneHere] = useState<Set<string>>(new Set());
 
   // Load events once; pre-tick ?event= if we came from an event page,
   // otherwise the first upcoming one.
@@ -91,6 +99,7 @@ export default function AdminNotifyPage() {
 
   useEffect(() => {
     load();
+    setDoneHere(new Set()); // new set of events → start a fresh "done" list
   }, [load]);
 
   /** Tick/untick an event, keeping the list in date order. */
@@ -132,9 +141,26 @@ export default function AdminNotifyPage() {
   const lastSent = (r: Row) =>
     selected.map((id) => r.sent[id]).filter(Boolean).sort().pop() ?? null;
 
-  /** Log the send against every ticked event. The <a> itself opens WhatsApp. */
-  async function logSend(r: Row) {
+  /**
+   * Copy one vendor's personalised message to the clipboard, then log it as
+   * sent. If the browser blocks clipboard access, show it in a prompt box
+   * to copy by hand.
+   */
+  async function copyFor(r: Row) {
     const msg = messageFor(r);
+    try {
+      await navigator.clipboard.writeText(msg);
+    } catch {
+      window.prompt(`Copy the message for ${r.business_name}:`, msg);
+    }
+    setCopiedRow(r.id);
+    setDoneHere((d) => new Set(d).add(r.id));
+    setTimeout(() => setCopiedRow((c) => (c === r.id ? null : c)), 2000);
+    await logSend(r, msg);
+  }
+
+  /** Log the send against every ticked event. */
+  async function logSend(r: Row, msg: string) {
     try {
       const { sent_at } = await api<{ sent_at: string }>('/api/admin/notify', {
         method: 'POST',
@@ -143,17 +169,17 @@ export default function AdminNotifyPage() {
       const stamp = Object.fromEntries(selected.map((id) => [id, sent_at]));
       setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, sent: { ...x.sent, ...stamp } } : x)) ?? rs);
     } catch {
-      /* logging is best-effort; the message still opens */
+      /* logging is best-effort; the message is already copied */
     }
   }
 
   if (!ready) return <p className="muted">Loading…</p>;
   // Type filter first (defines the audience), then sent/unsent.
   const audience = rows?.filter((r) => !typeFilter || String(r.vendor_type_id) === typeFilter) ?? [];
-  const shown = audience.filter((r) => filter === 'all' || !toldAll(r));
+  const shown = audience.filter((r) => filter === 'all' || !toldAll(r) || doneHere.has(r.id));
   const sentCount = audience.filter(toldAll).length;
   // Broadcast targets: the vendors listed on the current tab with a usable number.
-  const targets = shown.filter((r) => waLink(r.phone, ''));
+  const targets = shown.filter((r) => waLink(r.phone, '') && !(filter === 'unsent' && toldAll(r)));
   const typeName = types.find((t) => String(t.id) === typeFilter)?.name;
 
   /** The same text for everyone: a broadcast can't be personalised. */
@@ -215,8 +241,8 @@ export default function AdminNotifyPage() {
     <>
       <h1>Notify vendors</h1>
       <p className="muted small">
-        Tap <strong>Send</strong> to open WhatsApp with the message ready, then press send in WhatsApp. Only active vendors
-        who opted in and have a phone number are listed.
+        Tap <strong>Copy</strong> next to a vendor, switch to your WhatsApp tab, open their chat and paste. Copying marks
+        them as notified. Only active vendors who opted in and have a phone number are listed.
       </p>
 
       <div className="card stack">
@@ -308,21 +334,29 @@ export default function AdminNotifyPage() {
                   // Told about some ticked events but not all: say which.
                   const partial = !toldAll(r) && last ? chosen.filter((e) => r.sent[e.id]).map((e) => e.name) : null;
                   return (
-                    <tr key={r.id}>
+                    <tr key={r.id} style={filter === 'unsent' && toldAll(r) ? { opacity: 0.45 } : undefined}>
                       <td>
                         <strong>{r.business_name}</strong>
                         <div className="small muted">{[r.vendor_code, r.vendor_type?.name, r.contact_name].filter(Boolean).join(' · ')}</div>
                         {r.offerings && <div className="small muted" style={{ maxWidth: 360 }}>{r.offerings}</div>}
                       </td>
-                      <td className="small">{r.phone}</td>
+                      <td className="small">
+                        {r.phone}
+                        {/* For a first-time chat: opens in ONE reused tab named "whatsapp". */}
+                        {href && (
+                          <div>
+                            <a href={href} target="whatsapp" rel="noreferrer" className="small">Open chat ↗</a>
+                          </div>
+                        )}
+                      </td>
                       <td className="small muted">
                         {partial ? `Already told about ${partial.join(', ')}` : last ? `Sent ${formatDateTime(last)}` : ''}
                       </td>
                       <td className="right">
                         {href ? (
-                          <a className="btn btn-sm btn-wa" href={href} target="_blank" rel="noreferrer" onClick={() => logSend(r)}>
-                            {toldAll(r) ? 'Send again' : 'Send'}
-                          </a>
+                          <button className="btn btn-sm btn-wa" onClick={() => copyFor(r)}>
+                            {copiedRow === r.id ? '✓ Copied' : toldAll(r) ? '📋 Copy again' : '📋 Copy'}
+                          </button>
                         ) : (
                           <span className="small error">Invalid number</span>
                         )}
