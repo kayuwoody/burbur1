@@ -3,9 +3,14 @@
  *
  * CONCEPT: tick the events to announce and write the message once using
  * placeholders. Each vendor row gets:
- *   - "Open & type": loads that vendor's chat in ONE reused browser tab
- *     (named "whatsapp") with the personalised message already typed in;
- *     the admin just presses Enter there. No new tab per vendor.
+ *   - "Open & type": opens that vendor's chat with the personalised
+ *     message already typed in; the admin just presses Enter. Where it opens
+ *     is a choice remembered on this computer:
+ *       app → the WhatsApp DESKTOP app via a whatsapp:// link: no browser
+ *             tabs at all (recommended).
+ *       web → WhatsApp Web. WhatsApp Web isolates its tab
+ *             (Cross-Origin-Opener-Policy), which stops any website from
+ *             re-using it, so each vendor opens a NEW tab. Unavoidable.
  *   - "Copy": puts the message on the clipboard instead, for pasting.
  * We never press Send ourselves: automating WhatsApp breaks its terms and
  * risks the number being banned. No API account or per-message fee.
@@ -34,7 +39,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { useVendorTypes } from '@/components/useVendorTypes';
 import { api } from '@/lib/api';
-import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, todayMYT, waLink, waWebLink } from '@/lib/util';
+import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, todayMYT, waAppLink, waLink, waWebLink } from '@/lib/util';
 import { downloadText, vcardFile } from '@/lib/vcard';
 import type { EventSummary } from '@/lib/types';
 
@@ -75,6 +80,20 @@ export default function AdminNotifyPage() {
   // Vendors copied for during this visit: they stay on the "Not yet sent"
   // tab (greyed) so a row doesn't jump away the moment you copy it.
   const [doneHere, setDoneHere] = useState<Set<string>>(new Set());
+  // Where "Open & type" opens chats: desktop app (default) or WhatsApp Web.
+  // Remembered per computer; browser storage can be blocked, hence try/catch.
+  const [openIn, setOpenIn] = useState<'app' | 'web'>('app');
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('notify_open_in') === 'web') setOpenIn('web');
+    } catch {}
+  }, []);
+  const chooseOpenIn = (v: 'app' | 'web') => {
+    setOpenIn(v);
+    try {
+      localStorage.setItem('notify_open_in', v);
+    } catch {}
+  };
 
   // Load events once; pre-tick ?event= if we came from an event page,
   // otherwise the first upcoming one.
@@ -161,19 +180,26 @@ export default function AdminNotifyPage() {
   }
 
   /**
-   * Open the vendor's chat with the message pre-typed, in the single tab
-   * named "whatsapp" (the first click opens it; later clicks reuse it).
-   * window.open must run directly in the click handler or the browser's
-   * pop-up blocker steps in, so logging happens after.
-   * Phones don't have WhatsApp Web, so there we hand off to the app (wa.me).
+   * Open the vendor's chat with the message pre-typed.
+   *   - Phone: wa.me hands over to the WhatsApp app.
+   *   - Desktop app: a whatsapp:// link. Setting location to it launches the
+   *     app; the browser stays on this page (no tab).
+   *   - WhatsApp Web: a new tab (see the note at the top of this file).
+   * window.open must run directly in the click handler or the pop-up
+   * blocker steps in, so logging happens after.
    */
   function openFor(r: Row) {
     const msg = messageFor(r);
     const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-    const url = mobile ? waLink(r.phone, msg) : waWebLink(r.phone, msg);
-    if (!url) return;
-    const tab = window.open(url, 'whatsapp');
-    tab?.focus();
+    if (mobile || openIn === 'app') {
+      const url = mobile ? waLink(r.phone, msg) : waAppLink(r.phone, msg);
+      if (!url) return;
+      window.location.href = url;
+    } else {
+      const url = waWebLink(r.phone, msg);
+      if (!url) return;
+      window.open(url, '_blank');
+    }
     setDoneHere((d) => new Set(d).add(r.id));
     void logSend(r, msg);
   }
@@ -260,11 +286,21 @@ export default function AdminNotifyPage() {
     <>
       <h1>Notify vendors</h1>
       <p className="muted small">
-        Tap <strong>Open &amp; type</strong>: the vendor’s chat opens in your WhatsApp tab with the message already typed,
-        just press <strong>Enter</strong> there and come back for the next one. (The first tap opens that tab; after that it’s
-        reused. Log in to WhatsApp Web in it once.) Either button marks the vendor as notified. Only active vendors who
-        opted in and have a phone number are listed.
+        Tap <strong>Open &amp; type</strong>: the vendor’s chat opens with the message already typed, just press{' '}
+        <strong>Enter</strong> and come back for the next one. Either button marks the vendor as notified. Only active vendors
+        who opted in and have a phone number are listed.
       </p>
+      <div className="row small" style={{ marginBottom: 12 }}>
+        <span className="muted">Open chats in:</span>
+        <label className="check" style={{ margin: 0 }}>
+          <input type="radio" name="openIn" checked={openIn === 'app'} onChange={() => chooseOpenIn('app')} /> WhatsApp desktop
+          app (no tabs; first time, allow the browser to open it)
+        </label>
+        <label className="check" style={{ margin: 0 }}>
+          <input type="radio" name="openIn" checked={openIn === 'web'} onChange={() => chooseOpenIn('web')} /> WhatsApp Web
+          (opens a new tab each time; WhatsApp blocks tab re-use)
+        </label>
+      </div>
 
       <div className="card stack">
         <div>
