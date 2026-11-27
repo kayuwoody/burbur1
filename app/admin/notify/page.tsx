@@ -59,8 +59,12 @@ type Row = {
 /** WhatsApp broadcast lists hold at most 256 contacts each. */
 const BROADCAST_MAX = 256;
 
+/** Starting message (editable on the page before sending). */
 const DEFAULT_TEMPLATE =
-  'Hi {name}! Stall bookings are now open for:\n{events}\n\nPick your spot at the links above. First come, first served!';
+  'Hi {name}! Good Vibes Bazaar is back at EkoCheras Mall LG! Stall bookings are now open for:\n' +
+  '{events}\n\n' +
+  'Please let me know if you have any questions.\n' +
+  'Pick your spot at the links above. First come, first served!';
 
 export default function AdminNotifyPage() {
   const { ready } = useRequireAuth('admin');
