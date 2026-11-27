@@ -99,6 +99,8 @@ export default function AdminNotifyPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
   const [rows, setRows] = useState<Row[] | null>(null);
+  // Why the vendor list couldn't load, if it couldn't.
+  const [loadError, setLoadError] = useState<string | null>(null);
   // Tabs: who still needs a message / who's been told / flagged sends / everyone.
   const [filter, setFilter] = useState<'unsent' | 'sent' | 'flagged' | 'all'>('unsent');
   // Vendor type filter: '' = everyone, else a type id (e.g. only Activities).
@@ -144,8 +146,12 @@ export default function AdminNotifyPage() {
   // Reload the vendor list + send history whenever the ticked set changes.
   const key = selected.join(',');
   const load = useCallback(() => {
+    setLoadError(null);
     if (!key) return setRows(null);
-    api<{ vendors: Row[] }>(`/api/admin/notify?event_ids=${key}`).then((r) => setRows(r.vendors));
+    api<{ vendors: Row[] }>(`/api/admin/notify?event_ids=${key}`)
+      .then((r) => setRows(r.vendors))
+      // Show the problem instead of an empty list (e.g. a migration not run yet).
+      .catch((e: Error) => setLoadError(e.message));
   }, [key]);
 
   useEffect(() => {
@@ -418,6 +424,13 @@ export default function AdminNotifyPage() {
           </div>
         )}
       </div>
+
+      {loadError && (
+        <p className="card error">
+          Couldn’t load the vendor list: {loadError}
+          {/does not exist/i.test(loadError) && ' (a database update probably hasn’t been run yet: see supabase/migrations)'}
+        </p>
+      )}
 
       {selected.length > 0 && (
         <>
