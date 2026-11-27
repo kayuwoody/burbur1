@@ -110,6 +110,18 @@ export function waLink(phone: string | null | undefined, message: string): strin
 }
 
 /**
+ * Link that opens a chat in WhatsApp WEB (web.whatsapp.com) with the message
+ * already typed in the box, so the admin only has to press Enter.
+ * CONCEPT: unlike wa.me, this skips the "Continue to chat" page on desktop.
+ * Opened into one named browser tab, it reuses that tab for every vendor.
+ */
+export function waWebLink(phone: string | null | undefined, message: string): string | null {
+  const num = waNumber(phone);
+  if (!num) return null;
+  return `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(message)}`;
+}
+
+/**
  * Fill {placeholders} in a message template.
  * fillTemplate('Hi {name}', { name: 'Ali' }) → 'Hi Ali'
  * Unknown placeholders are left untouched so typos are visible.

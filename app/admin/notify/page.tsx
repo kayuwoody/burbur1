@@ -2,14 +2,15 @@
  * /admin/notify — announce one or more events to vendors over WhatsApp.
  *
  * CONCEPT: tick the events to announce and write the message once using
- * placeholders. Each vendor row gets a "Copy" button that puts the
- * personalised message on the clipboard, ready to paste into the vendor's
- * chat in an already-open WhatsApp Web tab (no new tab per vendor). No API
- * account or per-message fee. Copying also logs the send against EVERY
- * ticked event, so each event's list shows who's already been told about it.
- * A small "Open chat" link is there for vendors you haven't chatted with yet;
- * it reuses ONE named browser tab ("whatsapp") instead of opening a new one
- * each time.
+ * placeholders. Each vendor row gets:
+ *   - "Open & type": loads that vendor's chat in ONE reused browser tab
+ *     (named "whatsapp") with the personalised message already typed in;
+ *     the admin just presses Enter there. No new tab per vendor.
+ *   - "Copy": puts the message on the clipboard instead, for pasting.
+ * We never press Send ourselves: automating WhatsApp breaks its terms and
+ * risks the number being banned. No API account or per-message fee.
+ * Either button logs the send against EVERY ticked event, so each event's
+ * list shows who's already been told about it.
  *
  * Two ways to send (see the "Broadcast list" card):
  *   - Broadcast (preferred, less likely to be flagged as spam): download the
@@ -17,7 +18,7 @@
  *     broadcast list in WhatsApp Business, paste the copied message, then
  *     "Mark as notified" here. Broadcasts only reach vendors who have saved
  *     OUR number, which is why the vendor site has "Save our number" buttons.
- *   - One by one: the per-vendor Copy buttons below (personalised).
+ *   - One by one: the per-vendor Open & type / Copy buttons (personalised).
  *
  * Placeholders:
  *   {name} {business}         the vendor
@@ -33,7 +34,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { useVendorTypes } from '@/components/useVendorTypes';
 import { api } from '@/lib/api';
-import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, todayMYT, waLink } from '@/lib/util';
+import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, todayMYT, waLink, waWebLink } from '@/lib/util';
 import { downloadText, vcardFile } from '@/lib/vcard';
 import type { EventSummary } from '@/lib/types';
 
@@ -159,6 +160,24 @@ export default function AdminNotifyPage() {
     await logSend(r, msg);
   }
 
+  /**
+   * Open the vendor's chat with the message pre-typed, in the single tab
+   * named "whatsapp" (the first click opens it; later clicks reuse it).
+   * window.open must run directly in the click handler or the browser's
+   * pop-up blocker steps in, so logging happens after.
+   * Phones don't have WhatsApp Web, so there we hand off to the app (wa.me).
+   */
+  function openFor(r: Row) {
+    const msg = messageFor(r);
+    const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    const url = mobile ? waLink(r.phone, msg) : waWebLink(r.phone, msg);
+    if (!url) return;
+    const tab = window.open(url, 'whatsapp');
+    tab?.focus();
+    setDoneHere((d) => new Set(d).add(r.id));
+    void logSend(r, msg);
+  }
+
   /** Log the send against every ticked event. */
   async function logSend(r: Row, msg: string) {
     try {
@@ -241,8 +260,10 @@ export default function AdminNotifyPage() {
     <>
       <h1>Notify vendors</h1>
       <p className="muted small">
-        Tap <strong>Copy</strong> next to a vendor, switch to your WhatsApp tab, open their chat and paste. Copying marks
-        them as notified. Only active vendors who opted in and have a phone number are listed.
+        Tap <strong>Open &amp; type</strong>: the vendor’s chat opens in your WhatsApp tab with the message already typed,
+        just press <strong>Enter</strong> there and come back for the next one. (The first tap opens that tab; after that it’s
+        reused. Log in to WhatsApp Web in it once.) Either button marks the vendor as notified. Only active vendors who
+        opted in and have a phone number are listed.
       </p>
 
       <div className="card stack">
@@ -340,23 +361,20 @@ export default function AdminNotifyPage() {
                         <div className="small muted">{[r.vendor_code, r.vendor_type?.name, r.contact_name].filter(Boolean).join(' · ')}</div>
                         {r.offerings && <div className="small muted" style={{ maxWidth: 360 }}>{r.offerings}</div>}
                       </td>
-                      <td className="small">
-                        {r.phone}
-                        {/* For a first-time chat: opens in ONE reused tab named "whatsapp". */}
-                        {href && (
-                          <div>
-                            <a href={href} target="whatsapp" rel="noreferrer" className="small">Open chat ↗</a>
-                          </div>
-                        )}
-                      </td>
+                      <td className="small">{r.phone}</td>
                       <td className="small muted">
                         {partial ? `Already told about ${partial.join(', ')}` : last ? `Sent ${formatDateTime(last)}` : ''}
                       </td>
                       <td className="right">
                         {href ? (
-                          <button className="btn btn-sm btn-wa" onClick={() => copyFor(r)}>
-                            {copiedRow === r.id ? '✓ Copied' : toldAll(r) ? '📋 Copy again' : '📋 Copy'}
-                          </button>
+                          <div className="row" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                            <button className="btn btn-sm btn-wa" onClick={() => openFor(r)}>
+                              {toldAll(r) ? '💬 Open again' : '💬 Open & type'}
+                            </button>
+                            <button className="btn btn-sm" onClick={() => copyFor(r)} title="Copy the message to paste yourself">
+                              {copiedRow === r.id ? '✓ Copied' : '📋 Copy'}
+                            </button>
+                          </div>
                         ) : (
                           <span className="small error">Invalid number</span>
                         )}
