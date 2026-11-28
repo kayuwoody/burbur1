@@ -75,15 +75,21 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
       {/* ---------- Admin flags ---------- */}
       <div className="card" style={{ marginTop: 12 }}>
         <strong>Flags</strong>
-        <div className="small muted">★ = interested in that market · 📌 = needs follow-up. Click to toggle; saved straight away.</div>
+        <div className="small muted">
+          ✓ = has a stall there (⏳ = booked, awaiting payment), set automatically from bookings and assignments · ★ = interested
+          in that market · 📌 = needs follow-up. Click ★ / 📌 to toggle; saved straight away.
+        </div>
         {flags ? (
           <VendorFlags
             vendorId={vendor.id}
             vendorName={vendor.business_name}
             flags={flags}
-            // Upcoming markets, plus past ones they were interested in (history).
+            // Upcoming markets, plus past ones they were interested in or had stalls at (history).
             events={events
-              .filter((e) => e.status !== 'closed' || flags.interests.includes(e.id))
+              .filter(
+                (e) =>
+                  e.status !== 'closed' || flags.interests.includes(e.id) || flags.vendor_of.some((v) => v.event_id === e.id),
+              )
               .sort((a, b) => a.start_date.localeCompare(b.start_date))}
             onChange={setFlags}
           />

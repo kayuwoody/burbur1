@@ -8,7 +8,8 @@
  *                        "wrong number" flag from ANY event, so a bad number
  *                        is visible before you try it again.
  *                        Also the vendor's admin flags (014_vendor_flags.sql):
- *                        `interests` (event ids) and follow_up fields.
+ *                        `interests` (event ids), follow_up fields, and
+ *                        `vendor_of` (events they already have stalls at).
  *                        (?event_id=A still works for a single event.)
  * POST  { event_ids, vendor_id | vendor_ids, message } → record that one
  *                        message covering those events was sent (one row per
@@ -28,7 +29,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
-import { loadInterests } from '@/lib/server/flags';
+import { loadInterests, loadVendorOf } from '@/lib/server/flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,7 @@ export const GET = handle(async (req) => {
 
   // Four independent reads at once: vendors, the ticked events' log, any
   // "bad number" flags (from any event), and event-interest flags.
-  const [vendorsRes, logsRes, warnRes, interests] = await Promise.all([
+  const [vendorsRes, logsRes, warnRes, interests, vendorOf] = await Promise.all([
     supabase
       .from('vendors')
       .select(
@@ -90,6 +91,7 @@ export const GET = handle(async (req) => {
       .in('flag_reason', NUMBER_REASONS)
       .order('flagged_at', { ascending: true }),
     loadInterests(),
+    loadVendorOf(undefined, true), // upcoming events they already have stalls at (booked / held / assigned)
   ]);
   const vendors = must(vendorsRes) as { id: string }[];
   const logs = must(logsRes) as LogRow[];
@@ -109,7 +111,7 @@ export const GET = handle(async (req) => {
   });
 
   return NextResponse.json({
-    vendors: vendors.map((v) => ({ ...v, log: log[v.id] ?? {}, warning: warning[v.id] ?? null, interests: interests[v.id] ?? [] })),
+    vendors: vendors.map((v) => ({ ...v, log: log[v.id] ?? {}, warning: warning[v.id] ?? null, interests: interests[v.id] ?? [], vendor_of: vendorOf[v.id] ?? [] })),
   });
 });
 

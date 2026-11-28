@@ -1,8 +1,12 @@
 /**
  * components/VendorFlags.tsx — admin flags on a vendor (admin pages only).
  *
+ *   ✓ Vendor / ⏳ Held: the vendor already has stalls at that event (booked
+ *     online or assigned by us; "held" = online booking awaiting payment).
+ *     Read-only: it follows the bookings automatically.
  *   ★ Interested: one toggle chip per event offered. Ticking it records that
- *     the vendor said they'd like a stall at that event.
+ *     the vendor said they'd like a stall at that event. Hidden for events
+ *     they already have a stall at.
  *   📌 Follow up: a to-do flag with an optional note ("call back Monday").
  *
  * CONCEPT: the same component sits on each Admin → Notify row (compact) and
@@ -18,6 +22,8 @@ import { formatDateTime } from '@/lib/util';
 
 export type Flags = {
   interests: string[];
+  /** Events they have stalls at (derived from bookings/assignments). */
+  vendor_of: { event_id: string; status: 'booked' | 'held'; stalls: string[] }[];
   follow_up: boolean;
   follow_up_note: string | null;
   follow_up_at: string | null;
@@ -75,6 +81,21 @@ export default function VendorFlags({
   return (
     <div className="flags" style={{ opacity: busy ? 0.6 : 1 }}>
       {events.map((e) => {
+        // Already has a stall here: show that instead of the interest toggle.
+        const of = flags.vendor_of.find((v) => v.event_id === e.id);
+        if (of) {
+          const name = compact && events.length === 1 ? '' : `${e.name} `;
+          return (
+            <span
+              key={e.id}
+              className={`flag-chip vendor${of.status === 'held' ? ' held' : ''}`}
+              title={of.status === 'held' ? 'Booked online, waiting for payment' : 'Has a stall at this event'}
+            >
+              {of.status === 'held' ? '⏳ Held' : '✓ Vendor'}: {name}
+              {of.stalls.length > 1 ? 'stalls' : 'stall'} {of.stalls.join(', ')}
+            </span>
+          );
+        }
         const on = flags.interests.includes(e.id);
         return (
           <button

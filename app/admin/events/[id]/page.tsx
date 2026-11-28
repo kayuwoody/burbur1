@@ -242,7 +242,7 @@ export default function AdminEventMapPage({ params }: { params: { id: string } }
                 );
                 return (
                   <div key={m.id + m.to} className="spread small">
-                    <span>{m.business_name}: {m.from} → <strong>{m.to}</strong></span>
+                    <span><Link href={`/admin/vendors/${m.id}`}>{m.business_name}</Link>: {m.from} → <strong>{m.to}</strong></span>
                     {wa ? <a className="btn btn-sm btn-wa" href={wa} target="_blank" rel="noreferrer">WhatsApp</a> : <span className="muted">no phone</span>}
                   </div>
                 );

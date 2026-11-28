@@ -42,6 +42,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRequireAuth } from '@/components/AuthProvider';
 import { useVendorTypes } from '@/components/useVendorTypes';
 import { api } from '@/lib/api';
@@ -106,8 +107,9 @@ export default function AdminNotifyPage() {
   const [filter, setFilter] = useState<'unsent' | 'sent' | 'flagged' | 'all'>('unsent');
   // Vendor type filter: '' = everyone, else a type id (e.g. only Activities).
   const [typeFilter, setTypeFilter] = useState('');
-  // Flag filter: everyone / interested in a ticked event / flagged for follow-up.
-  const [flagFilter, setFlagFilter] = useState<'' | 'interested' | 'follow_up'>('');
+  // Flag filter: everyone / interested in a ticked event / flagged for
+  // follow-up / already a vendor at a ticked event / not yet a vendor at all of them.
+  const [flagFilter, setFlagFilter] = useState<'' | 'interested' | 'follow_up' | 'vendor' | 'not_vendor'>('');
   const types = useVendorTypes();
   // "Copied!" feedback on the broadcast message button.
   const [copied, setCopied] = useState(false);
@@ -315,7 +317,9 @@ export default function AdminNotifyPage() {
       (r) =>
         (!typeFilter || String(r.vendor_type_id) === typeFilter) &&
         (flagFilter !== 'interested' || selected.some((id) => r.interests.includes(id))) &&
-        (flagFilter !== 'follow_up' || r.follow_up),
+        (flagFilter !== 'follow_up' || r.follow_up) &&
+        (flagFilter !== 'vendor' || selected.some((id) => r.vendor_of.some((v) => v.event_id === id))) &&
+        (flagFilter !== 'not_vendor' || !selected.every((id) => r.vendor_of.some((v) => v.event_id === id))),
     ) ?? [];
   // Rows for the current tab. On "Not yet sent", vendors handled during this
   // visit stay (greyed) so rows don't jump away mid-click.
@@ -455,6 +459,8 @@ export default function AdminNotifyPage() {
               <option value="">Any flags</option>
               <option value="interested">★ Interested in the ticked event(s)</option>
               <option value="follow_up">📌 Needs follow-up</option>
+              <option value="vendor">✓ Already a vendor at the ticked event(s)</option>
+              <option value="not_vendor">Not yet booked for the ticked event(s)</option>
             </select>
           </div>
           <div className="tabs">
@@ -508,7 +514,8 @@ export default function AdminNotifyPage() {
                   return (
                     <tr key={r.id} style={filter === 'unsent' && toldAll(r) ? { opacity: 0.45 } : undefined}>
                       <td>
-                        <strong>{r.business_name}</strong>
+                        {/* Name opens the vendor's details page (flags, bookings, notes). */}
+                        <Link href={`/admin/vendors/${r.id}`}><strong>{r.business_name}</strong></Link>
                         <div className="small muted">{[r.vendor_code, r.vendor_type?.name, r.contact_name].filter(Boolean).join(' · ')}</div>
                         {r.offerings && <div className="small muted" style={{ maxWidth: 360 }}>{r.offerings}</div>}
                         {/* Admin flags: ★ interest per ticked event, 📌 follow-up (saved on click). */}
@@ -520,12 +527,21 @@ export default function AdminNotifyPage() {
                           events={chosen}
                           onChange={(f) => setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, ...f } : x)) ?? rs)}
                         />
-                        {/* Interest in events that aren't ticked right now. */}
+                        {/* Stalls / interest at events that aren't ticked right now. */}
                         {(() => {
-                          const other = events.filter((e) => !selected.includes(e.id) && r.interests.includes(e.id));
-                          return other.length ? (
-                            <div className="small muted">★ Also interested: {other.map((e) => e.name).join(', ')}</div>
-                          ) : null;
+                          const others = events.filter((e) => !selected.includes(e.id));
+                          const vendorAt = others.filter((e) => r.vendor_of.some((v) => v.event_id === e.id));
+                          const keen = others.filter((e) => r.interests.includes(e.id) && !vendorAt.includes(e));
+                          return (
+                            <>
+                              {vendorAt.length > 0 && (
+                                <div className="small muted">✓ Also a vendor at: {vendorAt.map((e) => e.name).join(', ')}</div>
+                              )}
+                              {keen.length > 0 && (
+                                <div className="small muted">★ Also interested: {keen.map((e) => e.name).join(', ')}</div>
+                              )}
+                            </>
+                          );
                         })()}
                         {/* A number problem flagged before (any event): check before trying again. */}
                         {r.warning && (

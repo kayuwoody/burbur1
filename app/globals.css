@@ -316,3 +316,6 @@ fieldset:disabled { opacity: 0.75; }
 .flag-chip.on { background: #fff4d6; border-color: #e7b53a; color: #7a5a00; }
 /* Follow-up: terracotta chip */
 .flag-chip.follow.on { background: #fbe6dd; border-color: #c25a34; color: #9a3f1f; }
+/* Has a stall at the event (read-only): green; awaiting payment: amber */
+.flag-chip.vendor { cursor: default; background: #dff3e6; border-color: #5a9d6e; color: #2d6a3e; }
+.flag-chip.vendor.held { background: #fff1db; border-color: #d9a040; color: #8a5a00; }
