@@ -54,6 +54,10 @@ export interface Vendor {
   whatsapp_opt_in: boolean;
   is_active: boolean;
   created_at: string;
+  /** Admin to-do flag (014_vendor_flags.sql), with optional note + when set. */
+  follow_up?: boolean;
+  follow_up_note?: string | null;
+  follow_up_at?: string | null;
 }
 
 /** A non-bookable shape drawn on the map (shop lot, escalator, etc). */

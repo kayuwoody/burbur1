@@ -7,6 +7,8 @@
  *                        and `warning`: their latest "no WhatsApp" /
  *                        "wrong number" flag from ANY event, so a bad number
  *                        is visible before you try it again.
+ *                        Also the vendor's admin flags (014_vendor_flags.sql):
+ *                        `interests` (event ids) and follow_up fields.
  *                        (?event_id=A still works for a single event.)
  * POST  { event_ids, vendor_id | vendor_ids, message } → record that one
  *                        message covering those events was sent (one row per
@@ -26,6 +28,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/server/supabase';
 import { handle, HttpError, must, requireAdmin } from '@/lib/server/auth';
+import { loadInterests } from '@/lib/server/flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,12 +68,14 @@ export const GET = handle(async (req) => {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // Three independent reads at once: vendors, the ticked events' log, and
-  // any "bad number" flags (from any event).
-  const [vendorsRes, logsRes, warnRes] = await Promise.all([
+  // Four independent reads at once: vendors, the ticked events' log, any
+  // "bad number" flags (from any event), and event-interest flags.
+  const [vendorsRes, logsRes, warnRes, interests] = await Promise.all([
     supabase
       .from('vendors')
-      .select('id, vendor_code, business_name, contact_name, phone, vendor_type_id, offerings, vendor_type:vendor_types(name)')
+      .select(
+        'id, vendor_code, business_name, contact_name, phone, vendor_type_id, offerings, follow_up, follow_up_note, follow_up_at, vendor_type:vendor_types(name)',
+      )
       .eq('is_active', true)
       .eq('whatsapp_opt_in', true)
       .not('phone', 'is', null)
@@ -84,6 +89,7 @@ export const GET = handle(async (req) => {
       .eq('status', 'failed')
       .in('flag_reason', NUMBER_REASONS)
       .order('flagged_at', { ascending: true }),
+    loadInterests(),
   ]);
   const vendors = must(vendorsRes) as { id: string }[];
   const logs = must(logsRes) as LogRow[];
@@ -103,7 +109,7 @@ export const GET = handle(async (req) => {
   });
 
   return NextResponse.json({
-    vendors: vendors.map((v) => ({ ...v, log: log[v.id] ?? {}, warning: warning[v.id] ?? null })),
+    vendors: vendors.map((v) => ({ ...v, log: log[v.id] ?? {}, warning: warning[v.id] ?? null, interests: interests[v.id] ?? [] })),
   });
 });
 

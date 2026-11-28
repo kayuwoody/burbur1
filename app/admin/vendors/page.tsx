@@ -92,7 +92,11 @@ export default function AdminVendorsPage() {
             {vendors?.map((v) => (
               <tr key={v.id} style={{ opacity: v.is_active ? 1 : 0.5 }}>
                 <td className="small">{v.vendor_code}</td>
-                <td><Link href={`/admin/vendors/${v.id}`}>{v.business_name}</Link></td>
+                <td>
+                  <Link href={`/admin/vendors/${v.id}`}>{v.business_name}</Link>
+                  {/* Follow-up flag (set on Notify or the vendor page); hover for the note. */}
+                  {v.follow_up && <span title={v.follow_up_note ? `Follow up: ${v.follow_up_note}` : 'Needs follow-up'}> 📌</span>}
+                </td>
                 <td>{v.vendor_type?.name}</td>
                 {/* Long offerings are clipped; full text is on the detail page */}
                 <td className="small" style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v.offerings ?? ''}>

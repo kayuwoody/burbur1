@@ -48,6 +48,7 @@ import { api } from '@/lib/api';
 import { fillTemplate, formatDateRange, formatDateTime, siteOrigin, todayMYT, waAppLink, waLink, waWebLink } from '@/lib/util';
 import { downloadText, vcardFile } from '@/lib/vcard';
 import type { EventSummary } from '@/lib/types';
+import VendorFlags, { type Flags } from '@/components/VendorFlags';
 
 type Row = {
   id: string;
@@ -62,7 +63,7 @@ type Row = {
   log: Record<string, LogEntry>;
   /** Latest "not on WhatsApp" / "wrong number" flag from ANY event, if still relevant. */
   warning: LogEntry | null;
-};
+} & Flags; // admin flags: interests (event ids) + follow-up (components/VendorFlags.tsx)
 
 /** One notification_log entry as the API returns it. */
 type LogEntry = {
@@ -105,6 +106,8 @@ export default function AdminNotifyPage() {
   const [filter, setFilter] = useState<'unsent' | 'sent' | 'flagged' | 'all'>('unsent');
   // Vendor type filter: '' = everyone, else a type id (e.g. only Activities).
   const [typeFilter, setTypeFilter] = useState('');
+  // Flag filter: everyone / interested in a ticked event / flagged for follow-up.
+  const [flagFilter, setFlagFilter] = useState<'' | 'interested' | 'follow_up'>('');
   const types = useVendorTypes();
   // "Copied!" feedback on the broadcast message button.
   const [copied, setCopied] = useState(false);
@@ -307,7 +310,13 @@ export default function AdminNotifyPage() {
 
   if (!ready) return <p className="muted">Loading…</p>;
   // Type filter first (defines the audience), then sent/unsent.
-  const audience = rows?.filter((r) => !typeFilter || String(r.vendor_type_id) === typeFilter) ?? [];
+  const audience =
+    rows?.filter(
+      (r) =>
+        (!typeFilter || String(r.vendor_type_id) === typeFilter) &&
+        (flagFilter !== 'interested' || selected.some((id) => r.interests.includes(id))) &&
+        (flagFilter !== 'follow_up' || r.follow_up),
+    ) ?? [];
   // Rows for the current tab. On "Not yet sent", vendors handled during this
   // visit stay (greyed) so rows don't jump away mid-click.
   const shown = audience.filter((r) =>
@@ -442,6 +451,11 @@ export default function AdminNotifyPage() {
                 <option key={t.id} value={t.id}>{t.name} only</option>
               ))}
             </select>
+            <select value={flagFilter} onChange={(e) => setFlagFilter(e.target.value as typeof flagFilter)} style={{ width: 'auto' }}>
+              <option value="">Any flags</option>
+              <option value="interested">★ Interested in the ticked event(s)</option>
+              <option value="follow_up">📌 Needs follow-up</option>
+            </select>
           </div>
           <div className="tabs">
             <button className={`tab${filter === 'unsent' ? ' active' : ''}`} onClick={() => setFilter('unsent')}>
@@ -497,6 +511,22 @@ export default function AdminNotifyPage() {
                         <strong>{r.business_name}</strong>
                         <div className="small muted">{[r.vendor_code, r.vendor_type?.name, r.contact_name].filter(Boolean).join(' · ')}</div>
                         {r.offerings && <div className="small muted" style={{ maxWidth: 360 }}>{r.offerings}</div>}
+                        {/* Admin flags: ★ interest per ticked event, 📌 follow-up (saved on click). */}
+                        <VendorFlags
+                          compact
+                          vendorId={r.id}
+                          vendorName={r.business_name}
+                          flags={r}
+                          events={chosen}
+                          onChange={(f) => setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, ...f } : x)) ?? rs)}
+                        />
+                        {/* Interest in events that aren't ticked right now. */}
+                        {(() => {
+                          const other = events.filter((e) => !selected.includes(e.id) && r.interests.includes(e.id));
+                          return other.length ? (
+                            <div className="small muted">★ Also interested: {other.map((e) => e.name).join(', ')}</div>
+                          ) : null;
+                        })()}
                         {/* A number problem flagged before (any event): check before trying again. */}
                         {r.warning && (
                           <div className="small error">

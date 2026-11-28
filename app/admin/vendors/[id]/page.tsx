@@ -1,6 +1,7 @@
 /**
  * /admin/vendors/[id] — one vendor: edit details/notes, see booking history
- * and any stalls assigned manually.
+ * and any stalls assigned manually. The Flags card shows/edits the admin
+ * flags (★ interested per event, 📌 follow-up), same as on Admin → Notify.
  */
 'use client';
 
@@ -12,7 +13,8 @@ import { BOOKING_STATUS_LABEL, formatDateRange, formatDateTime, rm, waLink } fro
 import VendorForm, { type VendorInput } from '@/components/VendorForm';
 import BookingItems from '@/components/BookingItems';
 import { SocialLinksDisplay } from '@/components/SocialLinks';
-import type { Booking, Vendor } from '@/lib/types';
+import type { Booking, EventSummary, Vendor } from '@/lib/types';
+import VendorFlags, { type Flags } from '@/components/VendorFlags';
 
 type Assigned = { event_id: string; stall_no: string; price: number; events: { name: string; start_date: string; end_date: string } | null };
 
@@ -20,6 +22,9 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
   const { ready } = useRequireAuth('admin');
   const [data, setData] = useState<{ vendor: Vendor; bookings: Booking[]; assigned: Assigned[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Admin flags + the events to offer as interest chips (loaded alongside).
+  const [flags, setFlags] = useState<Flags | null>(null);
+  const [events, setEvents] = useState<EventSummary[]>([]);
 
   const load = useCallback(() => {
     api<{ vendor: Vendor; bookings: Booking[]; assigned: Assigned[] }>(`/api/admin/vendors/${params.id}`)
@@ -28,8 +33,12 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
   }, [params.id]);
 
   useEffect(() => {
-    if (ready) load();
-  }, [ready, load]);
+    if (!ready) return;
+    load();
+    // Flags and events are independent of the main record: fetch in parallel.
+    api<{ flags: Flags }>(`/api/admin/vendors/${params.id}/flags`).then((r) => setFlags(r.flags)).catch(() => setFlags(null));
+    api<{ events: EventSummary[] }>('/api/admin/events').then((r) => setEvents(r.events)).catch(() => {});
+  }, [ready, load, params.id]);
 
   async function save(v: VendorInput) {
     const { vendor } = await api<{ vendor: Vendor }>(`/api/admin/vendors/${params.id}`, { method: 'PATCH', body: v });
@@ -62,6 +71,26 @@ export default function AdminVendorPage({ params }: { params: { id: string } }) 
       </p>
 
       <SocialLinksDisplay website={vendor.website} links={vendor.social_links} />
+
+      {/* ---------- Admin flags ---------- */}
+      <div className="card" style={{ marginTop: 12 }}>
+        <strong>Flags</strong>
+        <div className="small muted">★ = interested in that market · 📌 = needs follow-up. Click to toggle; saved straight away.</div>
+        {flags ? (
+          <VendorFlags
+            vendorId={vendor.id}
+            vendorName={vendor.business_name}
+            flags={flags}
+            // Upcoming markets, plus past ones they were interested in (history).
+            events={events
+              .filter((e) => e.status !== 'closed' || flags.interests.includes(e.id))
+              .sort((a, b) => a.start_date.localeCompare(b.start_date))}
+            onChange={setFlags}
+          />
+        ) : (
+          <p className="small muted">Loading…</p>
+        )}
+      </div>
 
       <div className="card" style={{ marginTop: 12 }}>
         {/* key re-initialises the form when the saved record changes type, so a
